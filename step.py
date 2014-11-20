@@ -191,7 +191,9 @@ def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, **options):
 
     niter = 0
     while niter < maxiter:
-        optimize.one_step()
+        (x, y) = optimize.one_step()
+        if y is None:
+            break
 
         if callback is not None:
             if callback(optimize.xmin):
