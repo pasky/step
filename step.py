@@ -141,7 +141,7 @@ class STEP:
         i, diff = min(idiff, key=itemgetter(1))
 
         if self.disp:
-            print('Easiest interval %f: [%f, %f]' % (diff, self.points[i], self.points[i+1]))
+            print('Easiest interval %s: [%s, %s]' % (diff, self.points[i], self.points[i+1]))
 
         # Split it into two
         newpoint = (self.points[i] + self.points[i+1]) / 2.0
