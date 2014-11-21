@@ -107,8 +107,6 @@ class STEP:
             self.points[2][axis] = bounds[1][axis]
         self.values = [self.fun(p) for p in self.points]
 
-        print(self.points)
-        print(self.values)
         imin, self.fmin = min(enumerate(self.values), key=itemgetter(1))
         self.xmin = self.points[imin]
 
