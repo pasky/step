@@ -65,7 +65,7 @@ class STEP:
     >>> print(optimize.xmin, optimize.fmin)
 
     """
-    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10):
+    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7):
         """
         Set up a STEP algorithm instance on a particular function.
         This does not evaluate it in any way yet - to start optimization,
@@ -75,6 +75,7 @@ class STEP:
         self.epsilon = epsilon
         self.disp = disp
         self.tolx = tolx
+        self.maxdiff = maxdiff
 
         # These will be filled in begin()
         self.points = None
@@ -134,7 +135,7 @@ class STEP:
             else:
                 delta = self.points[i+1][self.axis] - self.points[i][self.axis]
             return delta >= self.tolx
-        idiff = filter(lambda (i, diff): interval_wide_enough(i),
+        idiff = filter(lambda (i, diff): interval_wide_enough(i) and diff < self.maxdiff,
                        enumerate(self.difficulty))
         if len(idiff) == 0:
             return (None, None)  # We cannot split the interval more
