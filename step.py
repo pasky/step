@@ -164,6 +164,19 @@ class STEP:
 
         return (newpoint, newvalue)
 
+    def update_context(self, dx, dy):
+        """
+        TODO
+        """
+        for i in range(len(self.points)):
+            self.points[i] += dx
+            self.values[i] += dy
+        # Do not update xmin since it's reference to one of the points
+        # above which we already updated.
+        # self.xmin += dx
+        self.fmin += dy
+        self._recompute_difficulty()
+
     def _interval_difficulty(self, points, values):
         """
         Compute difficulty of a single interval between two points.
