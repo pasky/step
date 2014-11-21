@@ -1,3 +1,32 @@
+"""
+STEP is a scalar optimization algorithm.  This module provides
+an ``ndstep_seq_minimize`` function that tries to apply it to
+multivariate optimization nevertheless.
+
+The approach is to simply keep running independent STEP algorithms
+along separate dimensions, progressively finding improved solutions.
+We try to mirror the approach described in (Posik, 2009):
+
+  * http://dl.acm.org/citation.cfm?id=1570325
+  * http://sci2s.ugr.es/EAMHCO/pdfs/contributionsGECCO09/p2329-posik.pdf
+
+Example:
+
+>>> def f(x):
+...     return np.linalg.norm(x) ** 2
+>>> x0 = np.array([-3, -3, -3])
+>>> x1 = np.array([+1, +2, +3])
+
+>>> from ndstep import ndstep_minimize
+>>> ndstep_minimize_seq(f, bounds=(x0, x1), maxiter_uni=100)
+{'fun': 5.8207660913467407e-11,
+ 'nit': 300,
+ 'success': True,
+ 'x': array([  0.00000000e+00,  -7.62939453e-06,   0.00000000e+00])}
+
+"""
+
+
 import numpy as np
 
 from step import step_minimize
@@ -11,18 +40,9 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=None, maxiter_uni=100, cal
     Sequentially optimize along each axis separately, each for
     maxiter_uni iterations.
 
-    Example:
+    Dimensions are selected using a round-robin strategy.
 
-    >>> def f(x):
-    ...     return (x - 2) * x * (x + 2)**2
-
-    >>> from step import step_minimize
-    >>> step_minimize(f, bounds=(-10, +10), maxiter=100)
-    {'fun': -9.91494958991847,
-     'nit': 100,
-     'success': True,
-     'x': 1.2807846069335938}
-
+    See the module description for an example.
     """
 
     dim = np.shape(bounds[0])[0]

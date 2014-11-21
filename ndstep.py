@@ -1,3 +1,30 @@
+"""
+STEP is a scalar optimization algorithm.  This module provides
+an ``ndstep_minimize`` function that tries to apply it to multivariate
+optimization nevertheless.
+
+The approach is to find an optimum in each dimension by a separate STEP
+algorithm but the steps along different dimensions are interleaved and
+improving solutions along one dimensions are propagated to STEP
+intervals in all other dimensions.
+
+Example:
+
+>>> def f(x):
+...     return np.linalg.norm(x) ** 2
+>>> x0 = np.array([-3, -3, -3])
+>>> x1 = np.array([+1, +2, +3])
+
+>>> from ndstep import ndstep_minimize
+>>> ndstep_minimize(f, bounds=(x0, x1), maxiter=1000)
+{'fun': 3.637978807091713e-12,
+ 'nit': 1000,
+ 'success': True,
+ 'x': array([  0.00000000e+00,   1.90734863e-06,   0.00000000e+00])}
+
+"""
+
+
 import numpy as np
 
 from step import STEP
@@ -5,20 +32,17 @@ from step import STEP
 
 def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None, point0=None, **options):
     """
-    Minimize a given function within given bounds (a tuple of two points).
+    Minimize a given multivariate function within given bounds
+    (a tuple of two points).
 
-    Example:
+    Each dimension is optimized by a separate STEP algorithm but the
+    steps along different dimensions are interleaved and improving
+    solutions along one dimensions are propagated to STEP intervals
+    in all other dimensions.
 
-    >>> def f(x):
-    ...     return (x - 2) * x * (x + 2)**2
+    Dimensions are selected using a round-robin strategy.
 
-    >>> from step import step_minimize
-    >>> step_minimize(f, bounds=(-10, +10), maxiter=100)
-    {'fun': -9.91494958991847,
-     'nit': 100,
-     'success': True,
-     'x': 1.2807846069335938}
-
+    See the module description for an example.
     """
 
     dim = np.shape(bounds[0])[0]

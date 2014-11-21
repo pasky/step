@@ -10,8 +10,11 @@ crossing the interval boundary points and touching the supposed
 intervals that have boundary points near the optimum.  The "smoother"
 the function, the better this works.
 
-http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=349896
-http://www.applied-mathematics.net/optimization/Step.pdf
+  * http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=349896
+  * http://www.applied-mathematics.net/optimization/Step.pdf
 
 For now, see the top of the ``step.py`` module for usage instructions
 and some simple examples.
+
+Experimental support for multi-variate optimization of linearly
+separable functions is provided by ``ndstep.py`` and ``ndstep-seq.py``.

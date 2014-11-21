@@ -165,7 +165,11 @@ class STEP:
 
     def update_context(self, dx, dy):
         """
-        TODO
+        This special-purpose function can be used for linear translation
+        of all points and values between iterations.  We use this in ndstep
+        when we run one STEP per dimension and assume linearly separable
+        functions; when we find a new optimum along some dimension, we
+        perform this translation in STEPs of other dimensions.
         """
         for i in range(len(self.points)):
             self.points[i] += dx
