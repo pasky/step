@@ -113,6 +113,8 @@ class STEP:
 
         self._recompute_difficulty()
 
+        return (self.xmin, self.fmin)
+
     def one_step(self):
         """
         Perform one iteration of the STEP algorithm, which amounts to
