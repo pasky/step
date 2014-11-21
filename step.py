@@ -65,7 +65,7 @@ class STEP:
     >>> print(optimize.xmin, optimize.fmin)
 
     """
-    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-11):
+    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10):
         """
         Set up a STEP algorithm instance on a particular function.
         This does not evaluate it in any way yet - to start optimization,
