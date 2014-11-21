@@ -40,6 +40,7 @@ We use that for multi-dimensional STEP.
 """
 
 import math
+import numpy as np
 from operator import itemgetter
 
 
@@ -81,18 +82,32 @@ class STEP:
         self.xmin = None
         self.fmin = None
         self.difficulty = None
+        self.axis = None
 
-    def begin(self, bounds, point0=None):
+    def begin(self, bounds, point0=None, axis=None):
         """
         Initialize the algorithm with particular global interval bounds
         and starting point (the middle of the interval by default).
+
+        If the bounds are in multi-dimensional space, axis denotes the
+        axis along which scalar optimization is performed (with the
+        other dimensions held fixed).
         """
+        self.axis = axis
+
         if point0 is None:
             point0 = (bounds[0] + bounds[1]) / 2.0
 
-        self.points = [bounds[0], point0, bounds[1]]
-        self.values = map(lambda p: self.fun(p), self.points)
+        if axis is None:
+            self.points = [bounds[0], point0, bounds[1]]
+        else:
+            self.points = [np.array(point0), point0, np.array(point0)]
+            self.points[0][axis] = bounds[0][axis]
+            self.points[2][axis] = bounds[1][axis]
+        self.values = [self.fun(p) for p in self.points]
 
+        print(self.points)
+        print(self.values)
         imin, self.fmin = min(enumerate(self.values), key=itemgetter(1))
         self.xmin = self.points[imin]
 
@@ -111,7 +126,13 @@ class STEP:
         """
 
         # Select the easiest interval which is wide enough
-        idiff = filter(lambda (i, diff): self.points[i+1] - self.points[i] >= self.tolx,
+        def interval_wide_enough(i):
+            if self.axis is None:
+                delta = self.points[i+1] - self.points[i]
+            else:
+                delta = self.points[i+1][self.axis] - self.points[i][self.axis]
+            return delta >= self.tolx
+        idiff = filter(lambda (i, diff): interval_wide_enough(i),
                        enumerate(self.difficulty))
         if len(idiff) == 0:
             return (None, None)  # We cannot split the interval more
@@ -147,7 +168,10 @@ class STEP:
         """
         # Recompute the second point coordinates with regards to the left (first)
         # point.
-        x = points[1] - points[0]
+        if self.axis is None:
+            x = points[1] - points[0]
+        else:
+            x = points[1][self.axis] - points[0][self.axis]
         y = values[1] - values[0]
         f = self.fmin - values[0] - self.epsilon
 
@@ -167,9 +191,13 @@ class STEP:
         return difficulty
 
 
-def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, **options):
+def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, point0=None, **options):
     """
     Minimize a given function within given bounds (a tuple of two points).
+
+    The function can be multi-variate; in that case, you can pass numpy
+    arrays as bounds, but you must also specify axis, as we still perform
+    just scalar optimization along a specified axis.
 
     Example:
 
@@ -187,7 +215,7 @@ def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, **options):
 
     # Instantiate and fire off the STEP algorithm
     optimize = STEP(fun, **options)
-    optimize.begin(bounds)
+    optimize.begin(bounds, point0=point0, axis=axis)
 
     niter = 0
     while niter < maxiter:
