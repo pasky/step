@@ -32,13 +32,15 @@ import numpy as np
 from step import step_minimize
 
 
-def ndstep_seq_minimize(fun, bounds, args=(), maxiter=None, maxiter_uni=100, callback=None, point0=None, **options):
+def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100, callback=None, point0=None, **options):
     """
     Minimize a given multivariate function within given bounds
     (a tuple of two points).
 
     Sequentially optimize along each axis separately, each for
-    maxiter_uni iterations.
+    maxiter_uni iterations.  The stopping condition is either
+    maxiter total iterations or when one round of optimizations
+    is done without reaching an improvement (whichever comes first).
 
     Dimensions are selected using a round-robin strategy.
 
@@ -46,8 +48,6 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=None, maxiter_uni=100, cal
     """
 
     dim = np.shape(bounds[0])[0]
-    if maxiter is None:
-        maxiter = maxiter_uni * dim
     try:
         disp = options.get('disp', False)
     except KeyError:
@@ -58,7 +58,16 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=None, maxiter_uni=100, cal
 
     axis = 0
     niter = 0
-    while niter < maxiter:
+    last_improvement = 0  # #iter that last brought some improvement
+    while True:
+        # Test stopping conditions
+        if maxiter is not None and niter >= maxiter:
+            # Too many iterations
+            break
+        if last_improvement < niter - dim * maxiter_uni:
+            # No improvement for the last #dim iterations
+            break
+
         if disp: print('---------------- %d' % (axis % dim))
         res = step_minimize(fun, bounds=bounds, point0=xmin, maxiter=maxiter_uni, axis=(axis % dim))
         if disp: print('===>', res['x'], res['fun'])
@@ -67,6 +76,7 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=None, maxiter_uni=100, cal
             if disp: print('improving!')
             fmin = res['fun']
             xmin = res['x']
+            last_improvement = niter
         niter += res['nit']
         axis += 1
 
