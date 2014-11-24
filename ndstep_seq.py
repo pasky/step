@@ -32,7 +32,9 @@ import numpy as np
 from step import step_minimize
 
 
-def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100, callback=None, point0=None, **options):
+def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100,
+                        callback=None, point0=None, dimselect=None,
+                        **options):
     """
     Minimize a given multivariate function within given bounds
     (a tuple of two points).
@@ -42,7 +44,14 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100, cal
     maxiter total iterations or when one round of optimizations
     is done without reaching an improvement (whichever comes first).
 
-    Dimensions are selected using a round-robin strategy.
+    Dimensions are selected using a round-robin strategy by default.
+    You can pass a custom dimension selection function that is called
+    as dimselect(fun, dim, niter_inner, niter_outer, min=(xmin, fmin)):
+
+    >>> ndstep_seq_minimize(f, bounds=(x0, x1), maxiter_uni=5,
+    ...     dimselect=lambda fun, dim, niter_inner, niter_outer, min:
+    ...         np.random.permutation(range(dim))[0])
+
 
     See the module description for an example.
     """
@@ -68,9 +77,16 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100, cal
             # No improvement for the last #dim iterations
             break
 
+        # Select axis
+        if dimselect is None:
+            # By default, in simple round-robin fashion
+            axis = niter_outer % dim
+        else:
+            axis = dimselect(fun, dim, niter_inner, niter_outer, min=(xmin, fmin))
+
         if disp: print('---------------- %d' % (niter_outer % dim))
         res = step_minimize(fun, bounds=bounds, point0=xmin, maxiter=maxiter_uni,
-                            axis=(niter_outer % dim))
+                            axis=axis)
         if disp: print('===>', res['x'], res['fun'])
 
         if res['fun'] < fmin:
