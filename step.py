@@ -127,6 +127,9 @@ class STEP:
         """
 
         i = self.easiest_interval()
+        if i is None:
+            # No suitable interval anymore
+            return (None, None)
 
         # Split it into two
         newpoint = (self.points[i] + self.points[i+1]) / 2.0
@@ -183,7 +186,7 @@ class STEP:
         idiff = filter(lambda (i, diff): interval_wide_enough(i) and diff < self.maxdiff,
                        enumerate(self.difficulty))
         if len(idiff) == 0:
-            return (None, None)  # We cannot split the interval more
+            return None  # We cannot split the interval more
         i, diff = min(idiff, key=itemgetter(1))
 
         if self.disp:
