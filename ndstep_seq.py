@@ -56,28 +56,29 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100, cal
     xmin = None
     fmin = np.Inf
 
-    axis = 0
-    niter = 0
-    last_improvement = 0  # #iter that last brought some improvement
+    niter_inner = 0  # total number of STEP iterations (across all dimensions)
+    niter_outer = 0  # total number of dimension iterations
+    last_improvement = 0  # #iter_outer that last brought some improvement
     while True:
         # Test stopping conditions
-        if maxiter is not None and niter >= maxiter:
+        if maxiter is not None and niter_inner >= maxiter:
             # Too many iterations
             break
-        if last_improvement < niter - dim * maxiter_uni:
+        if last_improvement < niter_outer - dim:
             # No improvement for the last #dim iterations
             break
 
-        if disp: print('---------------- %d' % (axis % dim))
-        res = step_minimize(fun, bounds=bounds, point0=xmin, maxiter=maxiter_uni, axis=(axis % dim))
+        if disp: print('---------------- %d' % (niter_outer % dim))
+        res = step_minimize(fun, bounds=bounds, point0=xmin, maxiter=maxiter_uni,
+                            axis=(niter_outer % dim))
         if disp: print('===>', res['x'], res['fun'])
 
         if res['fun'] < fmin:
             if disp: print('improving!')
             fmin = res['fun']
             xmin = res['x']
-            last_improvement = niter
-        niter += res['nit']
-        axis += 1
+            last_improvement = niter_outer
+        niter_inner += res['nit']
+        niter_outer += 1
 
-    return dict(fun=fmin, x=xmin, nit=niter, success=(niter > 1))
+    return dict(fun=fmin, x=xmin, nit=niter_inner, success=(niter_inner > 1))
