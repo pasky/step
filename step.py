@@ -126,21 +126,7 @@ class STEP:
         anymore (this signals the algorithm should be terminated).
         """
 
-        # Select the easiest interval which is wide enough
-        def interval_wide_enough(i):
-            if self.axis is None:
-                delta = self.points[i+1] - self.points[i]
-            else:
-                delta = self.points[i+1][self.axis] - self.points[i][self.axis]
-            return delta >= self.tolx
-        idiff = filter(lambda (i, diff): interval_wide_enough(i) and diff < self.maxdiff,
-                       enumerate(self.difficulty))
-        if len(idiff) == 0:
-            return (None, None)  # We cannot split the interval more
-        i, diff = min(idiff, key=itemgetter(1))
-
-        if self.disp:
-            print('Easiest interval %s: [%s, %s]' % (diff, self.points[i], self.points[i+1]))
+        i = self.easiest_interval()
 
         # Split it into two
         newpoint = (self.points[i] + self.points[i+1]) / 2.0
@@ -179,6 +165,30 @@ class STEP:
         # self.xmin += dx
         self.fmin += dy
         self._recompute_difficulty()
+
+    def easiest_interval(self):
+        """
+        Find the easiest interval which is wide enough and return its
+        index (i which corresponds to difficulty[i] and pair of
+        points[i], points[i+1]).  This is mostly useful internally
+        but may be also interesting for some dimension selection
+        strategies in ndstep.
+        """
+        def interval_wide_enough(i):
+            if self.axis is None:
+                delta = self.points[i+1] - self.points[i]
+            else:
+                delta = self.points[i+1][self.axis] - self.points[i][self.axis]
+            return delta >= self.tolx
+        idiff = filter(lambda (i, diff): interval_wide_enough(i) and diff < self.maxdiff,
+                       enumerate(self.difficulty))
+        if len(idiff) == 0:
+            return (None, None)  # We cannot split the interval more
+        i, diff = min(idiff, key=itemgetter(1))
+
+        if self.disp:
+            print('Easiest interval %s: [%s, %s]' % (diff, self.points[i], self.points[i+1]))
+        return i
 
     def _interval_difficulty(self, points, values):
         """
