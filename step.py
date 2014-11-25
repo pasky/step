@@ -85,6 +85,11 @@ class STEP:
         self.difficulty = None
         self.axis = None
 
+        # Cached index of interval with lowest difficulty; this is set
+        # and reused by .easiest_interval(), but must be cleared anytime
+        # we touch the .difficulty[] array.
+        self.easiest_i_cache = None
+
     def begin(self, bounds, point0=None, axis=None):
         """
         Initialize the algorithm with particular global interval bounds
@@ -140,6 +145,7 @@ class STEP:
         self.values.insert(i+1, newvalue)
         self.difficulty[i] = None
         self.difficulty.insert(i+1, None)
+        self.easiest_i_cache = None  # we touched .difficulty[]
 
         if newvalue < self.fmin:
             # New fmin, recompute difficulties of all intervals
@@ -151,6 +157,7 @@ class STEP:
             # new intervals
             self.difficulty[i] = self._interval_difficulty(self.points[i:i+2], self.values[i:i+2])
             self.difficulty[i+1] = self._interval_difficulty(self.points[i+1:i+3], self.values[i+1:i+3])
+            # .easiest_i_cache already cleared
 
         return (newpoint, newvalue)
 
@@ -179,6 +186,10 @@ class STEP:
         but may be also interesting for some dimension selection
         strategies in ndstep.
         """
+        if self.easiest_i_cache is not None:
+            # Reuse previously computed index
+            return self.easiest_i_cache
+
         def interval_wide_enough(i):
             if self.axis is None:
                 delta = self.points[i+1] - self.points[i]
@@ -193,6 +204,7 @@ class STEP:
 
         if self.disp:
             print('Easiest interval %s: [%s, %s]' % (diff, self.points[i], self.points[i+1]))
+        self.easiest_i_cache = i
         return i
 
     def _interval_difficulty(self, points, values):
@@ -221,6 +233,7 @@ class STEP:
             diff = self._interval_difficulty(self.points[i:i+2], self.values[i:i+2])
             difficulty.append(diff)
         self.difficulty = difficulty
+        self.easiest_i_cache = None  # we touched .difficulty[]
         return difficulty
 
 
