@@ -69,10 +69,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
     """
 
     dim = np.shape(bounds[0])[0]
-    try:
-        disp = options.get('disp', False)
-    except KeyError:
-        disp = False
+    disp = options.get('disp', False)
     callback_interval = 100
 
     xmin = None

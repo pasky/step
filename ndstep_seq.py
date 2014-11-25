@@ -57,10 +57,7 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100,
     """
 
     dim = np.shape(bounds[0])[0]
-    try:
-        disp = options.get('disp', False)
-    except KeyError:
-        disp = False
+    disp = options.get('disp', False)
 
     xmin = None
     fmin = np.Inf
