@@ -62,7 +62,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
     ...             else niter % len(optimize))
 
     The callback, if passed, is called with the current optimum hypothesis
-    every 100 iterations; if it returns True, the optimization run is
+    every 10*D iterations; if it returns True, the optimization run is
     stopped.
 
     See the module description for an example.
@@ -70,7 +70,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
 
     dim = np.shape(bounds[0])[0]
     disp = options.get('disp', False)
-    callback_interval = 100
+    callback_interval = 10 * dim
 
     xmin = None
     fmin = np.Inf
