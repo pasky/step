@@ -129,7 +129,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
             xmin = x
             fmin = y
             for j in range(dim):
-                if i == j:
+                if i == j or optimize[j] is None:
                     continue
                 optimize[j].update_context(x - x0, y - y0)
             last_improvement = niter
