@@ -31,7 +31,7 @@ from step import STEP
 
 
 def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
-                    point0=None, dimselect=None, **options):
+                    point0=None, dimselect=None, stagiter=None, **options):
     """
     Minimize a given multivariate function within given bounds
     (a tuple of two points).
@@ -42,8 +42,8 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
     in all other dimensions.
 
     The stopping condition is either maxiter total iterations or when
-    #DIM optimization steps are done without reaching an improvement
-    (whichever comes first).
+    stagiter optimization steps are done without reaching an improvement
+    (whichever comes first).  By default, stagiter is 10*DIM.
 
     Dimensions are selected using a round-robin strategy by default.
     You can pass a custom dimension selection function that is called
@@ -66,7 +66,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
     ...             else niter % len(optimize))
 
     The callback, if passed, is called with the current optimum hypothesis
-    every 10*D iterations; if it returns True, the optimization run is
+    every 10*DIM iterations; if it returns True, the optimization run is
     stopped.
 
     See the module description for an example.
@@ -74,6 +74,8 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
 
     dim = np.shape(bounds[0])[0]
     disp = options.get('disp', False)
+    if stagiter is None:
+        stagiter = 10 * dim
     callback_interval = 10 * dim
 
     xmin = None
@@ -97,7 +99,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
         if maxiter is not None and niter >= maxiter:
             # Too many iterations
             break
-        if last_improvement < niter - dim:
+        if last_improvement < niter - stagiter:
             # No improvement for the last #dim iterations
             break
 
