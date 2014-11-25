@@ -147,7 +147,7 @@ if __name__ == "__main__":
     We optimize the Rastrigin-Bueche function in 20D in range [-5,5]
     for maxiter iterations, using ndstep_minimize() with random restarts.
     """
-    maxiter = 2000
+    maxiter = 16000
 
     # Reproducible runs
     np.random.seed(42)
