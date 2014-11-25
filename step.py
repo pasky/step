@@ -98,6 +98,8 @@ class STEP:
 
         if point0 is None:
             point0 = (bounds[0] + bounds[1]) / 2.0
+        else:
+            point0 = np.array(point0)  # make a copy
 
         if axis is None:
             self.points = [bounds[0], point0, bounds[1]]
