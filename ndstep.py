@@ -30,7 +30,8 @@ import numpy as np
 from step import STEP
 
 
-def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None, point0=None, **options):
+def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
+                    point0=None, dimselect=None, **options):
     """
     Minimize a given multivariate function within given bounds
     (a tuple of two points).
@@ -40,7 +41,25 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None, point0=Non
     solutions along one dimensions are propagated to STEP intervals
     in all other dimensions.
 
-    Dimensions are selected using a round-robin strategy.
+    Dimensions are selected using a round-robin strategy by default.
+    You can pass a custom dimension selection function that is called
+    as dimselect(fun, [step...], niter, min=(xmin, fmin)):
+
+    >>> # Rastrigin-Bueche
+    >>> def f(x): return 10 * (20 - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
+    >>> x0 = np.ones(20) - 5
+    >>> x1 = np.ones(20) + 5
+    # Random dimension choice
+    >>> ndstep_minimize(f, bounds=(x0, x1), maxiter=2000,
+    ...     dimselect=lambda fun, optimize, niter, min:
+    ...         np.random.permutation(range(len(optimize)))[0])
+    # Easiest dimensions choice
+    >>> ndstep_minimize(f, bounds=(x0, x1), maxiter=2000,
+    ...     dimselect=lambda fun, optimize, niter, min:
+    ...         np.argmin([o.difficulty[o.easiest_interval()] for o in optimize])
+    ...             if niter >= len(optimize)*4
+    ...             else niter % len(optimize))
+
 
     See the module description for an example.
     """
@@ -64,7 +83,13 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None, point0=Non
 
     niter = 0
     while niter < maxiter:
-        i = niter % dim
+        # Pick the next dimension to take a step in
+        if dimselect is None:
+            # By default, use round robin
+            i = niter % dim
+        else:
+            i = dimselect(fun, optimize, niter, min=(xmin, fmin))
+
         niter += 1
 
         if optimize[i] is None:
