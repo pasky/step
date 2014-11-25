@@ -30,7 +30,7 @@ import numpy as np
 from step import STEP
 
 
-def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
+def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
                     point0=None, dimselect=None, **options):
     """
     Minimize a given multivariate function within given bounds
