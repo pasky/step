@@ -41,6 +41,10 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
     solutions along one dimensions are propagated to STEP intervals
     in all other dimensions.
 
+    The stopping condition is either maxiter total iterations or when
+    #DIM optimization steps are done without reaching an improvement
+    (whichever comes first).
+
     Dimensions are selected using a round-robin strategy by default.
     You can pass a custom dimension selection function that is called
     as dimselect(fun, [step...], niter, min=(xmin, fmin)):
@@ -85,7 +89,16 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
 
     niter = 0
     niter_callback = callback_interval
-    while niter < maxiter:
+    last_improvement = 0  # #iter that last brought some improvement
+    while True:
+        # Test stopping conditions
+        if maxiter is not None and niter >= maxiter:
+            # Too many iterations
+            break
+        if last_improvement < niter - dim:
+            # No improvement for the last #dim iterations
+            break
+
         # Pick the next dimension to take a step in
         if dimselect is None:
             # By default, use round robin
@@ -117,6 +130,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
                 if i == j:
                     continue
                 optimize[j].update_context(x - x0, y - y0)
+            last_improvement = niter
 
         if callback is not None and niter >= niter_callback:
             if callback(optimize[i].xmin):
