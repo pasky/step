@@ -87,10 +87,12 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
             xmin = x
             fmin = y
 
-    niter = 0
+    niter = -1
     niter_callback = callback_interval
     last_improvement = 0  # #iter that last brought some improvement
     while True:
+        niter += 1
+
         # Test stopping conditions
         if maxiter is not None and niter >= maxiter:
             # Too many iterations
@@ -105,8 +107,6 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
             i = niter % dim
         else:
             i = dimselect(fun, optimize, niter, min=(xmin, fmin))
-
-        niter += 1
 
         if optimize[i] is None:
             continue
