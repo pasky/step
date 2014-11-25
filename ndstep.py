@@ -61,6 +61,9 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
     ...             if niter >= len(optimize) * 4
     ...             else niter % len(optimize))
 
+    The callback, if passed, is called with the current optimum hypothesis
+    every 100 iterations; if it returns True, the optimization run is
+    stopped.
 
     See the module description for an example.
     """
@@ -70,6 +73,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
         disp = options.get('disp', False)
     except KeyError:
         disp = False
+    callback_interval = 100
 
     xmin = None
     fmin = np.Inf
@@ -83,6 +87,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
             fmin = y
 
     niter = 0
+    niter_callback = callback_interval
     while niter < maxiter:
         # Pick the next dimension to take a step in
         if dimselect is None:
@@ -116,9 +121,10 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
                     continue
                 optimize[j].update_context(x - x0, y - y0)
 
-        if callback is not None:
+        if callback is not None and niter >= niter_callback:
             if callback(optimize[i].xmin):
                 break
+            niter_callback = niter + callback_interval
 
     return dict(fun=fmin, x=xmin, nit=niter,
                 success=(niter > 1))
