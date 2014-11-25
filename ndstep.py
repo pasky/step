@@ -154,9 +154,10 @@ if __name__ == "__main__":
     # Reproducible runs
     np.random.seed(42)
 
+    optimum = np.random.permutation(np.linspace(-2, 2, 20))
     def f(xx):
         """ 20D Rastrigin-Bueche, with optimum displaced from zero to [-2,2] """
-        x = xx - np.random.permutation(np.linspace(-2, 2, 20))
+        x = xx - optimum
         return 10 * (20 - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
     x0 = np.zeros(20) - 5
     x1 = np.zeros(20) + 5
