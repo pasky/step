@@ -66,8 +66,8 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
     ...             else niter % len(optimize))
 
     The callback, if passed, is called with the current optimum hypothesis
-    every 10*DIM iterations; if it returns True, the optimization run is
-    stopped.
+    (x, y) every 10*DIM iterations; if it returns True, the optimization
+    run is stopped.
 
     See the module description for an example.
     """
@@ -135,7 +135,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
             last_improvement = niter
 
         if callback is not None and niter >= niter_callback:
-            if callback(optimize[i].xmin):
+            if callback(xmin, fmin):
                 break
             niter_callback = niter + callback_interval
 
@@ -187,7 +187,9 @@ if __name__ == "__main__":
         # When a minimization finishes, run a random restart then
         p0 = np.random.rand(20) * 2 - 1
 
-        res = ndstep_minimize(f, bounds=(x0, x1), point0=p0, maxiter=(maxiter - globres['nit']))
+        res = ndstep_minimize(f, bounds=(x0, x1), point0=p0,
+                              maxiter=(maxiter - globres['nit']),
+                              callback=lambda x, y: y <= 1e-8)
         print(_format_solution(res, optimum))
         if res['fun'] < globres['fun']:
             globres['fun'] = res['fun']
