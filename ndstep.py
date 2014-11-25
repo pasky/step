@@ -167,6 +167,7 @@ if __name__ == "__main__":
         p0 = np.random.rand(20) * 2 - 1
 
         res = ndstep_minimize(f, bounds=(x0, x1), point0=p0, maxiter=(maxiter - globres['nit']))
+        print('intermediate solution %s' % (res,))
         if res['fun'] < globres['fun']:
             globres['fun'] = res['fun']
             globres['x'] = res['x']
