@@ -143,7 +143,12 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
 if __name__ == "__main__":
     """
     A simple testcase for speed benchmarking, etc.
+
+    We optimize the Rastrigin-Bueche function in 20D in range [-5,5]
+    for maxiter iterations, using ndstep_minimize() with random restarts.
     """
+    maxiter = 2000
+
     # Reproducible runs
     np.random.seed(42)
 
@@ -154,9 +159,19 @@ if __name__ == "__main__":
     x0 = np.zeros(20) - 5
     x1 = np.zeros(20) + 5
 
-    # Initial solution in a more interesting point than zero
-    # to get rid of intrinsic regularities
-    p0 = np.random.rand(20)
+    globres = dict(fun=np.Inf, x=None, nit=0, restarts=0, success=False)
+    while globres['fun'] > 1e-8 and globres['nit'] < maxiter:
+        # Initial solution in a more interesting point than zero
+        # to get rid of intrinsic regularities
+        # When a minimization finishes, run a random restart then
+        p0 = np.random.rand(20) * 10 - 5
 
-    res = ndstep_minimize(f, bounds=(x0, x1), point0=p0, maxiter=2000)
-    print(res)
+        res = ndstep_minimize(f, bounds=(x0, x1), point0=p0, maxiter=(maxiter - globres['nit']))
+        if res['fun'] < globres['fun']:
+            globres['fun'] = res['fun']
+            globres['x'] = res['x']
+            globres['success'] = True
+        globres['nit'] += res['nit']
+        globres['restarts'] += 1
+
+    print(globres)
