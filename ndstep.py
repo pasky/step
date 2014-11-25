@@ -153,8 +153,8 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     def f(xx):
-        """ 20D Rastrigin-Bueche, shifted from zero in most dimensions """
-        x = xx + np.array([0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1])-1
+        """ 20D Rastrigin-Bueche, with optimum displaced from zero to [-2,2] """
+        x = xx - np.random.permutation(np.linspace(-2, 2, 20))
         return 10 * (20 - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
     x0 = np.zeros(20) - 5
     x1 = np.zeros(20) + 5
@@ -164,7 +164,7 @@ if __name__ == "__main__":
         # Initial solution in a more interesting point than zero
         # to get rid of intrinsic regularities
         # When a minimization finishes, run a random restart then
-        p0 = np.random.rand(20) * 10 - 5
+        p0 = np.random.rand(20) * 2 - 1
 
         res = ndstep_minimize(f, bounds=(x0, x1), point0=p0, maxiter=(maxiter - globres['nit']))
         if res['fun'] < globres['fun']:
