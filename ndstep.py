@@ -122,3 +122,24 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
 
     return dict(fun=fmin, x=xmin, nit=niter,
                 success=(niter > 1))
+
+if __name__ == "__main__":
+    """
+    A simple testcase for speed benchmarking, etc.
+    """
+    # Reproducible runs
+    np.random.seed(42)
+
+    def f(xx):
+        """ 20D Rastrigin-Bueche, shifted from zero in most dimensions """
+        x = xx + np.array([0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1,-1,0,1])-1
+        return 10 * (20 - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
+    x0 = np.zeros(20) - 5
+    x1 = np.zeros(20) + 5
+
+    # Initial solution in a more interesting point than zero
+    # to get rid of intrinsic regularities
+    p0 = np.random.rand(20)
+
+    res = ndstep_minimize(f, bounds=(x0, x1), point0=p0, maxiter=2000)
+    print(res)
