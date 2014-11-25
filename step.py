@@ -217,6 +217,12 @@ class STEP:
             x = points[1] - points[0]
         else:
             x = points[1][self.axis] - points[0][self.axis]
+            # We should differ in exactly one dimension
+            assert np.sum(points[1] != points[0]) == 1
+
+        # Interval width should be positive and non-zero
+        assert x > 0
+
         y = values[1] - values[0]
         f = self.fmin - values[0] - self.epsilon
 
