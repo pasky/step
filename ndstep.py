@@ -142,6 +142,24 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
     return dict(fun=fmin, x=xmin, nit=niter,
                 success=(niter > 1))
 
+
+def _format_solution(res, optimum):
+    """
+    Return a string describing the solution described in res,
+    relative to the optimum point.
+    """
+    delta = np.abs(res['x'] - optimum)
+    closest_d = np.min(delta)
+    farthest_d = np.max(delta)
+    avg_d = np.average(delta)
+    sd_d = np.std(delta)
+    distance = np.linalg.norm(delta)
+    solstr = 'y=%e  nit=% 6d  dx=(min=%e, max=%e, avg=%.3f (+- %.3f = %.3f), dist=%e)' % \
+             (res['fun'], res['nit'],
+              closest_d, farthest_d, avg_d, sd_d, avg_d + sd_d, distance)
+    return solstr
+
+
 if __name__ == "__main__":
     """
     A simple testcase for speed benchmarking, etc.
@@ -170,7 +188,7 @@ if __name__ == "__main__":
         p0 = np.random.rand(20) * 2 - 1
 
         res = ndstep_minimize(f, bounds=(x0, x1), point0=p0, maxiter=(maxiter - globres['nit']))
-        print('intermediate solution %s' % (res,))
+        print(_format_solution(res, optimum))
         if res['fun'] < globres['fun']:
             globres['fun'] = res['fun']
             globres['x'] = res['x']
@@ -179,3 +197,4 @@ if __name__ == "__main__":
         globres['restarts'] += 1
 
     print(globres)
+    print(_format_solution(globres, optimum))
