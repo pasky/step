@@ -54,10 +54,11 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=100, callback=None,
     ...     dimselect=lambda fun, optimize, niter, min:
     ...         np.random.permutation(range(len(optimize)))[0])
     # Easiest dimensions choice
-    >>> ndstep_minimize(f, bounds=(x0, x1), maxiter=2000,
+    >>> p0 = np.random.rand(20)
+    >>> ndstep_minimize(f, bounds=(x0, x1), point0=p0, maxiter=2000,
     ...     dimselect=lambda fun, optimize, niter, min:
     ...         np.argmin([o.difficulty[o.easiest_interval()] for o in optimize])
-    ...             if niter >= len(optimize)*4
+    ...             if niter >= len(optimize) * 4
     ...             else niter % len(optimize))
 
 
