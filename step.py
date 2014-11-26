@@ -39,7 +39,7 @@ possibly even tweaking its internal data structures between iterations.
 We use that for multi-dimensional STEP.
 """
 
-import math
+import copy
 import numpy as np
 from operator import itemgetter
 
@@ -107,15 +107,15 @@ class STEP:
             point0 = np.array(point0)  # make a copy
 
         if axis is None:
-            self.points = [bounds[0], point0, bounds[1]]
+            self.points = np.array([bounds[0], point0, bounds[1]])
         else:
-            self.points = [np.array(point0), point0, np.array(point0)]
+            self.points = np.array([np.array(point0), point0, np.array(point0)])
             self.points[0][axis] = bounds[0][axis]
             self.points[2][axis] = bounds[1][axis]
-        self.values = [self.fun(p) for p in self.points]
+        self.values = np.array([self.fun(p) for p in self.points])
 
         imin, self.fmin = min(enumerate(self.values), key=itemgetter(1))
-        self.xmin = self.points[imin]
+        self.xmin = copy.copy(self.points[imin])
 
         self._recompute_difficulty()
 
@@ -141,22 +141,21 @@ class STEP:
         # Split it into two
         newpoint = (self.points[i] + self.points[i+1]) / 2.0
         newvalue = self.fun(newpoint)
-        self.points.insert(i+1, newpoint)
-        self.values.insert(i+1, newvalue)
-        self.difficulty[i] = None
-        self.difficulty.insert(i+1, None)
+        self.points = np.insert(self.points, i+1, newpoint, axis=0)
+        self.values = np.insert(self.values, i+1, newvalue, axis=0)
+        self.difficulty[i] = np.nan
+        self.difficulty = np.insert(self.difficulty, i+1, np.nan, axis=0)
         self.easiest_i_cache = None  # we touched .difficulty[]
 
         if newvalue < self.fmin:
             # New fmin, recompute difficulties of all intervals
             self.fmin = newvalue
-            self.xmin = self.points[i+1]
+            self.xmin = copy.copy(self.points[i+1])
             self._recompute_difficulty()
         else:
             # No fmin change, compute difficulties only of the two
             # new intervals
-            self.difficulty[i] = self._interval_difficulty(self.points[i:i+2], self.values[i:i+2])[0]
-            self.difficulty[i+1] = self._interval_difficulty(self.points[i+1:i+3], self.values[i+1:i+3])[0]
+            self.difficulty[i:i+2] = self._interval_difficulty(self.points[i:i+3], self.values[i:i+3])
             # .easiest_i_cache already cleared
 
         return (newpoint, newvalue)
@@ -169,12 +168,11 @@ class STEP:
         functions; when we find a new optimum along some dimension, we
         perform this translation in STEPs of other dimensions.
         """
-        for i in range(len(self.points)):
-            self.points[i] += dx
-            self.values[i] += dy
+        self.points += dx
+        self.values += dy
         # Do not update xmin since it's reference to one of the points
         # above which we already updated.
-        # self.xmin += dx
+        self.xmin += dx
         self.fmin += dy
         self._recompute_difficulty()
 
@@ -213,8 +211,6 @@ class STEP:
         for a mere pair of points, this is difficulty of just a single
         interval, of course.
         """
-        points = np.array(points)
-        values = np.array(values)
 
         # Recompute the second point coordinates with regards to the left (first)
         # point.
@@ -235,7 +231,7 @@ class STEP:
 
         # Curvature of parabole crossing [0,0], [x,y] and touching [?, f]
         a = (y - 2*f + 2*np.sqrt(f * (f - y))) / (x**2)
-        return list(a)
+        return a
 
     def _recompute_difficulty(self):
         """
