@@ -24,6 +24,7 @@ Example:
 
 """
 
+from __future__ import print_function
 
 import numpy as np
 
@@ -31,7 +32,8 @@ from step import STEP
 
 
 def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
-                    point0=None, dimselect=None, stagiter=None, **options):
+                    point0=None, dimselect=None, stagiter=None, logf=None,
+                    **options):
     """
     Minimize a given multivariate function within given bounds
     (a tuple of two points).
@@ -68,6 +70,9 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
     The callback, if passed, is called with the current optimum hypothesis
     (x, y) every 10*DIM iterations; if it returns True, the optimization
     run is stopped.
+
+    The logf file handle, if passed, is used for appending per-step
+    evaluation information in text format.
 
     See the module description for an example.
     """
@@ -122,6 +127,9 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
             optimize[i] = None
             continue
 
+        if logf:
+            print("%d,%d,%e,%s,%d" % (i, y < y0, y, ','.join(["%e" % xi for xi in x]), niter), file=logf)
+
         if y < y0:
             # We found an improving solution, shift the "context" on
             # all other axes
@@ -168,6 +176,7 @@ if __name__ == "__main__":
     for maxiter iterations, using ndstep_minimize() with random restarts.
     """
     maxiter = 32000
+    logf = open('ndstep-log.txt', mode='w')
 
     # Reproducible runs
     np.random.seed(42)
@@ -189,7 +198,8 @@ if __name__ == "__main__":
 
         res = ndstep_minimize(f, bounds=(x0, x1), point0=p0,
                               maxiter=(maxiter - globres['nit']),
-                              callback=lambda x, y: y <= 1e-8)
+                              callback=lambda x, y: y <= 1e-8,
+                              logf=logf)
         print(_format_solution(res, optimum))
         if res['fun'] < globres['fun']:
             globres['fun'] = res['fun']
