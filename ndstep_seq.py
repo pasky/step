@@ -33,7 +33,7 @@ from step import step_minimize
 
 
 def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100,
-                        callback=None, point0=None, dimselect=None,
+                        callback=None, point0=None, dimselect=None, logf=None,
                         **options):
     """
     Minimize a given multivariate function within given bounds
@@ -52,6 +52,9 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100,
     ...     dimselect=lambda fun, dim, niter_inner, niter_outer, min:
     ...         np.random.permutation(range(dim))[0])
 
+
+    The logf file handle, if passed, is used for appending per-step
+    evaluation information in text format.
 
     See the module description for an example.
     """
@@ -83,7 +86,7 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100,
 
         if disp: print('---------------- %d' % (niter_outer % dim))
         res = step_minimize(fun, bounds=bounds, point0=xmin, maxiter=maxiter_uni,
-                            axis=axis)
+                            axis=axis, logf=logf)
         if disp: print('===>', res['x'], res['fun'])
 
         if res['fun'] < fmin:
