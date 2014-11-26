@@ -155,8 +155,8 @@ class STEP:
         else:
             # No fmin change, compute difficulties only of the two
             # new intervals
-            self.difficulty[i] = self._interval_difficulty(self.points[i:i+2], self.values[i:i+2])
-            self.difficulty[i+1] = self._interval_difficulty(self.points[i+1:i+3], self.values[i+1:i+3])
+            self.difficulty[i] = self._interval_difficulty(self.points[i:i+2], self.values[i:i+2])[0]
+            self.difficulty[i+1] = self._interval_difficulty(self.points[i+1:i+3], self.values[i+1:i+3])[0]
             # .easiest_i_cache already cleared
 
         return (newpoint, newvalue)
@@ -209,38 +209,41 @@ class STEP:
 
     def _interval_difficulty(self, points, values):
         """
-        Compute difficulty of a single interval between two points.
+        Compute difficulty of intervals between the given list of points;
+        for a mere pair of points, this is difficulty of just a single
+        interval, of course.
         """
+        points = np.array(points)
+        values = np.array(values)
+
         # Recompute the second point coordinates with regards to the left (first)
         # point.
         if self.axis is None:
-            x = points[1] - points[0]
+            x = points[1:] - points[:-1]
         else:
-            x = points[1][self.axis] - points[0][self.axis]
-            # We should differ in exactly one dimension
+            x = points[1:, self.axis] - points[:-1, self.axis]
+
+        # Some sanity checks:
+        # We should differ in exactly one dimension
+        if len(points) == 2:
             assert np.sum(points[1] != points[0]) == 1
-
         # Interval width should be positive and non-zero
-        assert x > 0
+        assert np.all(x > 0)
 
-        y = values[1] - values[0]
-        f = self.fmin - values[0] - self.epsilon
+        y = values[1:] - values[:-1]
+        f = self.fmin - values[:-1] - self.epsilon
 
         # Curvature of parabole crossing [0,0], [x,y] and touching [?, f]
-        a = (y - 2*f + 2*math.sqrt(f * (f - y))) / (x**2)
-        return a
+        a = (y - 2*f + 2*np.sqrt(f * (f - y))) / (x**2)
+        return list(a)
 
     def _recompute_difficulty(self):
         """
         Recompute the difficulty of all intervals.
         """
-        difficulty = []
-        for i in range(len(self.points) - 1):
-            diff = self._interval_difficulty(self.points[i:i+2], self.values[i:i+2])
-            difficulty.append(diff)
-        self.difficulty = difficulty
+        self.difficulty = self._interval_difficulty(self.points, self.values)
         self.easiest_i_cache = None  # we touched .difficulty[]
-        return difficulty
+        return self.difficulty
 
 
 def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, point0=None, **options):
