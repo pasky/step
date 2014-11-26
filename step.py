@@ -194,11 +194,12 @@ class STEP:
             delta = self.points[1:, self.axis] - self.points[:-1, self.axis]
         interval_wide_enough = delta >= self.tolx
 
-        idiff = filter(lambda (i, diff): interval_wide_enough[i] and diff < self.maxdiff,
-                       enumerate(self.difficulty))
+        idiff = filter(lambda (i, diff): interval_wide_enough[i], enumerate(self.difficulty))
         if len(idiff) == 0:
             return None  # We cannot split the interval more
         i, diff = min(idiff, key=itemgetter(1))
+        if diff >= self.maxdiff:
+            return None  # Even the best difficulty is too high
 
         if self.disp:
             print('Easiest interval %s: [%s, %s]' % (diff, self.points[i], self.points[i+1]))
