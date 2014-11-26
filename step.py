@@ -188,13 +188,13 @@ class STEP:
             # Reuse previously computed index
             return self.easiest_i_cache
 
-        def interval_wide_enough(i):
-            if self.axis is None:
-                delta = self.points[i+1] - self.points[i]
-            else:
-                delta = self.points[i+1][self.axis] - self.points[i][self.axis]
-            return delta >= self.tolx
-        idiff = filter(lambda (i, diff): interval_wide_enough(i) and diff < self.maxdiff,
+        if self.axis is None:
+            delta = self.points[1:] - self.points[:-1]
+        else:
+            delta = self.points[1:, self.axis] - self.points[:-1, self.axis]
+        interval_wide_enough = delta >= self.tolx
+
+        idiff = filter(lambda (i, diff): interval_wide_enough[i] and diff < self.maxdiff,
                        enumerate(self.difficulty))
         if len(idiff) == 0:
             return None  # We cannot split the interval more
