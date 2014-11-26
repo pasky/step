@@ -39,6 +39,7 @@ possibly even tweaking its internal data structures between iterations.
 We use that for multi-dimensional STEP.
 """
 
+from __future__ import print_function
 import copy
 import numpy as np
 from operator import itemgetter
@@ -243,13 +244,16 @@ class STEP:
         return self.difficulty
 
 
-def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, point0=None, **options):
+def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, point0=None, logf=None, **options):
     """
     Minimize a given function within given bounds (a tuple of two points).
 
     The function can be multi-variate; in that case, you can pass numpy
     arrays as bounds, but you must also specify axis, as we still perform
     just scalar optimization along a specified axis.
+
+    The logf file handle, if passed, is used for appending per-step
+    evaluation information in text format.
 
     Example:
 
@@ -271,9 +275,14 @@ def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, p
 
     niter = 0
     while niter < maxiter:
+        y0 = optimize.fmin
+
         (x, y) = optimize.one_step()
         if y is None:
             break
+
+        if logf:
+            print("%d,%d,%e,%s,%d" % (axis, y < y0, y, ','.join(["%e" % xi for xi in x]), niter), file=logf)
 
         if callback is not None:
             if callback(optimize.xmin):
