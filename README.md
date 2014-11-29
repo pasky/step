@@ -18,3 +18,6 @@ and some simple examples.
 
 Experimental support for multi-variate optimization of linearly
 separable functions is provided by ``ndstep.py`` and ``ndstep-seq.py``.
+
+A testing tool for multi-variate optimization using STEP is available
+as the ``test.py`` script.
