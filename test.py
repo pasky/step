@@ -48,24 +48,25 @@ def run_ndstep(logfname, minimize_function, options):
     We optimize the Rastrigin-Bueche function in 20D in range [-5,5]
     for maxiter iterations, using ndstep_minimize() with random restarts.
     """
+    dim = options['dim']
     f = options['f']
     logf = open(logfname, mode='w')
 
     # Reproducible runs
     np.random.seed(options['seed'])
 
-    optimum = np.random.permutation(np.linspace(-2, 2, options['dim']))
-    x0 = np.zeros(options['dim']) - 5
-    x1 = np.zeros(options['dim']) + 5
+    optimum = np.random.permutation(np.linspace(-2, 2, dim))
+    x0 = np.zeros(dim) - 5
+    x1 = np.zeros(dim) + 5
 
     globres = dict(fun=np.Inf, x=None, nit=0, restarts=0, success=False)
     while globres['fun'] > 1e-8 and globres['nit'] < options['maxiter']:
         # Initial solution in a more interesting point than zero
         # to get rid of intrinsic regularities
         # When a minimization finishes, run a random restart then
-        p0 = np.random.rand(options['dim']) * 2 - 1
+        p0 = np.random.rand(dim) * 2 - 1
 
-        res = minimize_function(lambda x: f(options['dim'], optimum, x),
+        res = minimize_function(lambda x: f(dim, optimum, x),
                                 bounds=(x0, x1), point0=p0,
                                 maxiter=(options['maxiter'] - globres['nit']),
                                 callback=lambda x, y: y <= 1e-8,
