@@ -88,10 +88,12 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
 
     optimize = [STEP(fun, **options) for i in range(dim)]
     for i in range(dim):
-        (x, y) = optimize[i].begin(bounds, point0=point0, axis=i)
+        (x, y) = optimize[i].begin(bounds, point0=xmin, axis=i)
 
         if y < fmin:
-            xmin = x
+            for j in range(i):
+                optimize[j].update_context(x - xmin, y - fmin)
+            xmin = np.array(x)
             fmin = y
 
     niter = -1
