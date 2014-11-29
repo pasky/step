@@ -35,36 +35,35 @@ def _format_solution(res, optimum):
     return solstr
 
 
-def run_ndstep(logfname, minimize_function):
+def run_ndstep(logfname, minimize_function, options):
     """
     A simple testcase for speed benchmarking, etc.
 
     We optimize the Rastrigin-Bueche function in 20D in range [-5,5]
     for maxiter iterations, using ndstep_minimize() with random restarts.
     """
-    maxiter = 32000
     logf = open(logfname, mode='w')
 
     # Reproducible runs
-    np.random.seed(42)
+    np.random.seed(options['seed'])
 
-    optimum = np.random.permutation(np.linspace(-2, 2, 20))
+    optimum = np.random.permutation(np.linspace(-2, 2, options['dim']))
     def f(xx):
-        """ 20D Rastrigin-Bueche, with optimum displaced from zero to [-2,2] """
+        """ Rastrigin-Bueche, with optimum displaced from zero to [-2,2] """
         x = xx - optimum
-        return 10 * (20 - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
-    x0 = np.zeros(20) - 5
-    x1 = np.zeros(20) + 5
+        return 10 * (options['dim'] - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
+    x0 = np.zeros(options['dim']) - 5
+    x1 = np.zeros(options['dim']) + 5
 
     globres = dict(fun=np.Inf, x=None, nit=0, restarts=0, success=False)
-    while globres['fun'] > 1e-8 and globres['nit'] < maxiter:
+    while globres['fun'] > 1e-8 and globres['nit'] < options['maxiter']:
         # Initial solution in a more interesting point than zero
         # to get rid of intrinsic regularities
         # When a minimization finishes, run a random restart then
-        p0 = np.random.rand(20) * 2 - 1
+        p0 = np.random.rand(options['dim']) * 2 - 1
 
         res = minimize_function(f, bounds=(x0, x1), point0=p0,
-                                maxiter=(maxiter - globres['nit']),
+                                maxiter=(options['maxiter'] - globres['nit']),
                                 callback=lambda x, y: y <= 1e-8,
                                 logf=logf)
         print(_format_solution(res, optimum))
@@ -80,9 +79,17 @@ def run_ndstep(logfname, minimize_function):
 
 
 if __name__ == "__main__":
-    if sys.argv[1] == "ndstep":
-        run_ndstep('ndstep-log.txt', ndstep_minimize)
-    elif sys.argv[1] == "ndstep_seq":
-        run_ndstep('ndstep_seq-log.txt', ndstep_seq_minimize)
+    method = sys.argv[1]
+
+    options = {
+        'dim': 20,
+        'maxiter': 32000,
+        'seed': 42,
+    }
+
+    if method == "ndstep":
+        run_ndstep('ndstep-log.txt', ndstep_minimize, options)
+    elif method == "ndstep_seq":
+        run_ndstep('ndstep_seq-log.txt', ndstep_seq_minimize, options)
     else:
         assert False
