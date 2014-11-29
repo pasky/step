@@ -35,6 +35,12 @@ def _format_solution(res, optimum):
     return solstr
 
 
+def f4(dim, optimum, xx):
+    """ Rastrigin-Bueche """
+    x = xx - optimum
+    return 10 * (dim - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
+
+
 def run_ndstep(logfname, minimize_function, options):
     """
     A simple testcase for speed benchmarking, etc.
@@ -42,16 +48,13 @@ def run_ndstep(logfname, minimize_function, options):
     We optimize the Rastrigin-Bueche function in 20D in range [-5,5]
     for maxiter iterations, using ndstep_minimize() with random restarts.
     """
+    f = options['f']
     logf = open(logfname, mode='w')
 
     # Reproducible runs
     np.random.seed(options['seed'])
 
     optimum = np.random.permutation(np.linspace(-2, 2, options['dim']))
-    def f(xx):
-        """ Rastrigin-Bueche, with optimum displaced from zero to [-2,2] """
-        x = xx - optimum
-        return 10 * (options['dim'] - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
     x0 = np.zeros(options['dim']) - 5
     x1 = np.zeros(options['dim']) + 5
 
@@ -62,7 +65,8 @@ def run_ndstep(logfname, minimize_function, options):
         # When a minimization finishes, run a random restart then
         p0 = np.random.rand(options['dim']) * 2 - 1
 
-        res = minimize_function(f, bounds=(x0, x1), point0=p0,
+        res = minimize_function(lambda x: f(options['dim'], optimum, x),
+                                bounds=(x0, x1), point0=p0,
                                 maxiter=(options['maxiter'] - globres['nit']),
                                 callback=lambda x, y: y <= 1e-8,
                                 logf=logf)
@@ -82,6 +86,7 @@ if __name__ == "__main__":
     method = sys.argv[1]
 
     options = {
+        'f': f4,
         'dim': 20,
         'maxiter': 32000,
         'seed': 42,
