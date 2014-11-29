@@ -55,7 +55,7 @@ def run_ndstep(logfname, minimize_function, options):
     # Reproducible runs
     np.random.seed(options['seed'])
 
-    optimum = np.random.permutation(np.linspace(-2, 2, dim))
+    optimum = np.random.permutation(np.linspace(-4, 4, dim))
     x0 = np.zeros(dim) - 5
     x1 = np.zeros(dim) + 5
 
@@ -64,7 +64,7 @@ def run_ndstep(logfname, minimize_function, options):
         # Initial solution in a more interesting point than zero
         # to get rid of intrinsic regularities
         # When a minimization finishes, run a random restart then
-        p0 = np.random.rand(dim) * 2 - 1
+        p0 = np.random.rand(dim) * 4 - 1
 
         res = minimize_function(lambda x: f(dim, optimum, x),
                                 bounds=(x0, x1), point0=p0,
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         'f': f4,
         'dim': 20,
         'maxiter': 32000,
-        'seed': 42,
+        'seed': 43,
     }
 
     if method == "ndstep":
