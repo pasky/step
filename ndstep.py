@@ -119,7 +119,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
             continue
 
         if disp: print('-----------------------', i)
-        x0 = optimize[i].xmin
+        x0 = np.array(optimize[i].xmin)
         y0 = optimize[i].fmin
         (x, y) = optimize[i].one_step()
         if disp: print(x, y)
