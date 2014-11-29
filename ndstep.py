@@ -83,8 +83,8 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
         stagiter = 10 * dim
     callback_interval = 10 * dim
 
-    xmin = None
-    fmin = np.Inf
+    xmin = np.array(point0)
+    fmin = fun(point0)
 
     optimize = [STEP(fun, **options) for i in range(dim)]
     for i in range(dim):

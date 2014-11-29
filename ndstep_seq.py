@@ -62,8 +62,8 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=200,
     dim = np.shape(bounds[0])[0]
     disp = options.get('disp', False)
 
-    xmin = None
-    fmin = np.Inf
+    xmin = np.array(point0)
+    fmin = fun(point0)
 
     niter_inner = 0  # total number of STEP iterations (across all dimensions)
     niter_outer = 0  # total number of dimension iterations
