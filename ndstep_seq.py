@@ -97,6 +97,10 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100,
         niter_inner += res['nit']
         niter_outer += 1
 
+        if callback is not None:
+            if callback(xmin, fmin):
+                break
+
     return dict(fun=fmin, x=xmin, nit=niter_inner, success=(niter_inner > 1))
 
 
