@@ -32,7 +32,7 @@ import numpy as np
 from step import step_minimize
 
 
-def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=100,
+def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=200,
                         callback=None, point0=None, dimselect=None, logf=None,
                         **options):
     """
