@@ -11,6 +11,7 @@
 
 from __future__ import print_function
 
+import getopt
 import numpy as np
 import sys
 
@@ -83,8 +84,14 @@ def run_ndstep(logfname, minimize_function, options):
     print(_format_solution(globres, optimum))
 
 
+def usage(err=2):
+    print('Benchmark ndstep, ndstep_seq')
+    print('Usage: test.py [-f {f4}] [-d DIM] [-i MAXITER] [-s SEED] {ndstep,ndstep_seq}')
+    sys.exit(err)
+
+
 if __name__ == "__main__":
-    method = sys.argv[1]
+    # Deal with options and such
 
     options = {
         'f': f4,
@@ -92,6 +99,34 @@ if __name__ == "__main__":
         'maxiter': 32000,
         'seed': 43,
     }
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "d:f:hi:s:", ["help"])
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print(err)  # will print something like "option -a not recognized"
+        usage()
+
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage(0)
+        elif o == "-f":
+            if a == "f4":
+                options['f'] = f4
+            else:
+                usage()
+        elif o == "-d":
+            options['dim'] = int(a)
+        elif o == "-i":
+            options['maxiter'] = int(a)
+        elif o == "-s":
+            options['seed'] = int(a)
+        else:
+            assert False, "unhandled option"
+
+    method = args[0]
+
+    # Now, actually run the circus!
 
     if method == "ndstep":
         run_ndstep('ndstep-log.txt', ndstep_minimize, options)
