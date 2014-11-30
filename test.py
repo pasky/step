@@ -36,10 +36,15 @@ def _format_solution(res, optimum):
     return solstr
 
 
-def f4(dim, optimum, xx):
+class F4:
     """ Rastrigin-Bueche """
-    x = xx - optimum
-    return 10 * (dim - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
+    def __init__(self, dim):
+        self.dim = dim
+        self.optimum = np.random.permutation(np.linspace(-4, 4, self.dim))
+
+    def __call__(self, xx):
+        x = xx - self.optimum
+        return 10 * (self.dim - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
 
 
 def run_ndstep(logfname, minimize_function, options):
@@ -49,14 +54,13 @@ def run_ndstep(logfname, minimize_function, options):
     We optimize the Rastrigin-Bueche function in 20D in range [-5,5]
     for maxiter iterations, using ndstep_minimize() with random restarts.
     """
-    dim = options['dim']
-    f = options['f']
-    logf = open(logfname, mode='w')
-
     # Reproducible runs
     np.random.seed(options['seed'])
 
-    optimum = np.random.permutation(np.linspace(-4, 4, dim))
+    dim = options['dim']
+    f = options['f'](dim)
+    logf = open(logfname, mode='w')
+
     x0 = np.zeros(dim) - 5
     x1 = np.zeros(dim) + 5
 
@@ -67,12 +71,12 @@ def run_ndstep(logfname, minimize_function, options):
         # When a minimization finishes, run a random restart then
         p0 = np.random.rand(dim) * 4 - 1
 
-        res = minimize_function(lambda x: f(dim, optimum, x),
+        res = minimize_function(lambda x: f(x),
                                 bounds=(x0, x1), point0=p0,
                                 maxiter=(options['maxiter'] - globres['nit']),
                                 callback=lambda x, y: y <= 1e-8,
                                 logf=logf)
-        print(_format_solution(res, optimum))
+        print(_format_solution(res, f.optimum))
         if res['fun'] < globres['fun']:
             globres['fun'] = res['fun']
             globres['x'] = res['x']
@@ -81,7 +85,7 @@ def run_ndstep(logfname, minimize_function, options):
         globres['restarts'] += 1
 
     print(globres)
-    print(_format_solution(globres, optimum))
+    print(_format_solution(globres, f.optimum))
 
 
 def usage(err=2):
@@ -94,7 +98,7 @@ if __name__ == "__main__":
     # Deal with options and such
 
     options = {
-        'f': f4,
+        'f': F4,
         'dim': 20,
         'maxiter': 32000,
         'seed': 43,
@@ -112,7 +116,7 @@ if __name__ == "__main__":
             usage(0)
         elif o == "-f":
             if a == "f4":
-                options['f'] = f4
+                options['f'] = F4
             else:
                 usage()
         elif o == "-d":
