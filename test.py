@@ -8,6 +8,11 @@
 #
 # Usage: ./test.py ndstep
 # Usage: ./test.py ndstep_seq
+#
+# If you copy or symlink the bbobbenchmarks.py file from the BBOB COCO
+# benchmark suite to the current directory, you can benchmark any of
+# these functions too by specifying e.g. -f b7 for function 7 (rotated
+# ellipsoid).
 
 from __future__ import print_function
 
@@ -42,9 +47,36 @@ class F4:
         self.dim = dim
         self.optimum = np.random.permutation(np.linspace(-4, 4, self.dim))
 
+    def opt_y(self):
+        return 0
+
     def __call__(self, xx):
         x = xx - self.optimum
         return 10 * (self.dim - np.sum(np.cos(2 * np.pi * x), -1)) + np.sum(x ** 2, -1)
+
+
+class BBOB:
+    """ A BBOB function """
+    def __init__(self, dim, fid, iid):
+        import bbobbenchmarks
+        self.dim = dim
+        (self.f, self.fopt) = bbobbenchmarks.instantiate(fid, iinstance=iid)
+
+    def opt_y(self):
+        return self.fopt
+
+    def __call__(self, x):
+        return self.f(x)
+
+
+class BBOBFactory:
+    """ A BBOB function factory """
+    def __init__(self, fid, iid=1):
+        self.fid = fid
+        self.iid = iid
+
+    def __call__(self, dim):
+        return BBOB(dim, self.fid, self.iid)
 
 
 def run_ndstep(logfname, minimize_function, options):
@@ -74,9 +106,13 @@ def run_ndstep(logfname, minimize_function, options):
         res = minimize_function(lambda x: f(x),
                                 bounds=(x0, x1), point0=p0,
                                 maxiter=(options['maxiter'] - globres['nit']),
-                                callback=lambda x, y: y <= 1e-8,
+                                callback=lambda x, y: y - f.opt_y() <= 1e-8,
                                 logf=logf)
-        print(_format_solution(res, f.optimum))
+        res['fun'] -= f.opt_y()
+        try:
+            print(_format_solution(res, f.optimum))
+        except AttributeError:
+            print(_format_solution(res, np.nan))
         if res['fun'] < globres['fun']:
             globres['fun'] = res['fun']
             globres['x'] = res['x']
@@ -85,12 +121,15 @@ def run_ndstep(logfname, minimize_function, options):
         globres['restarts'] += 1
 
     print(globres)
-    print(_format_solution(globres, f.optimum))
+    try:
+        print(_format_solution(globres, f.optimum))
+    except AttributeError:
+        print(_format_solution(globres, np.nan))
 
 
 def usage(err=2):
     print('Benchmark ndstep, ndstep_seq')
-    print('Usage: test.py [-f {f4}] [-d DIM] [-i MAXITER] [-s SEED] {ndstep,ndstep_seq}')
+    print('Usage: test.py [-f {f4,bFID}] [-d DIM] [-i MAXITER] [-s SEED] {ndstep,ndstep_seq}')
     sys.exit(err)
 
 
@@ -117,6 +156,8 @@ if __name__ == "__main__":
         elif o == "-f":
             if a == "f4":
                 options['f'] = F4
+            elif a.startswith('b'):
+                options['f'] = BBOBFactory(int(a[1:]))
             else:
                 usage()
         elif o == "-d":
