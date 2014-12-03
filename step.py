@@ -244,13 +244,16 @@ class STEP:
         return self.difficulty
 
 
-def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, point0=None, logf=None, **options):
+def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, point0=None, logf=None, staglimit=None, **options):
     """
     Minimize a given function within given bounds (a tuple of two points).
 
     The function can be multi-variate; in that case, you can pass numpy
     arrays as bounds, but you must also specify axis, as we still perform
     just scalar optimization along a specified axis.
+
+    If staglimit is set to an integer, that constitutes the number of
+    iterations to stop after if no better solution has been found.
 
     The logf file handle, if passed, is used for appending per-step
     evaluation information in text format.
@@ -274,7 +277,11 @@ def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, p
     optimize.begin(bounds, point0=point0, axis=axis)
 
     niter = 0
+    last_improvement = 0
     while niter < maxiter:
+        if staglimit is not None and niter - last_improvement > staglimit:
+            break
+
         y0 = optimize.fmin
 
         (x, y) = optimize.one_step()
@@ -283,6 +290,9 @@ def step_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, p
 
         if logf:
             print("%d,%d,%e,%s,%d" % (axis, y < y0, y, ','.join(["%e" % xi for xi in x]), niter), file=logf)
+
+        if y < y0:
+            last_improvement = niter
 
         if callback is not None:
             if callback(optimize.xmin):
