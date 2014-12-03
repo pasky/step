@@ -80,6 +80,43 @@ class BBOBFactory:
         return BBOB(dim, self.fid, self.iid)
 
 
+def dimselect_random(fun, optimize, niter, min):
+    return np.random.randint(len(optimize))
+
+
+def dimselect_mindiff(fun, optimize, niter, min):
+    if niter >= len(optimize) * 4:
+        return np.argmin([o.difficulty[o.easiest_interval()] for o in optimize])
+    else:
+        return niter % len(optimize)
+
+
+def dimselect_maxdiff(fun, optimize, niter, min):
+    if niter >= len(optimize) * 4:
+        return np.argmax([o.difficulty[o.easiest_interval()] for o in optimize])
+    else:
+        return niter % len(optimize)
+
+
+def dimselect_diffpd(fun, optimize, niter, min):
+    if niter >= len(optimize) * 4:
+        pd = np.array([o.difficulty[o.easiest_interval()] for o in optimize])
+        pd /= np.sum(pd)
+        return np.random.choice(range(len(optimize)), p=pd)
+    else:
+        return niter % len(optimize)
+
+
+def dimselect_rdiffpd(fun, optimize, niter, min):
+    if niter >= len(optimize) * 4:
+        pd = np.array([o.difficulty[o.easiest_interval()] for o in optimize])
+        pd = 1. / pd
+        pd /= np.sum(pd)
+        return np.random.choice(range(len(optimize)), p=pd)
+    else:
+        return niter % len(optimize)
+
+
 def run_ndstep(logfname, minimize_function, options):
     """
     A simple testcase for speed benchmarking, etc.
@@ -108,7 +145,7 @@ def run_ndstep(logfname, minimize_function, options):
                                 bounds=(x0, x1), point0=p0,
                                 maxiter=(options['maxiter'] - globres['nit']),
                                 callback=lambda x, y: y - f.opt_y() <= 1e-8,
-                                logf=logf)
+                                logf=logf, dimselect=options['dimselect'])
         res['fun'] -= f.opt_y()
         print(_format_solution(res, f.optimum))
         if res['fun'] < globres['fun']:
@@ -124,7 +161,7 @@ def run_ndstep(logfname, minimize_function, options):
 
 def usage(err=2):
     print('Benchmark ndstep, ndstep_seq')
-    print('Usage: test.py [-f {f4,bFID}] [-d DIM] [-i MAXITER] [-s SEED] {ndstep,ndstep_seq}')
+    print('Usage: test.py [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-i MAXITER] [-s SEED] {ndstep,ndstep_seq}')
     sys.exit(err)
 
 
@@ -136,10 +173,11 @@ if __name__ == "__main__":
         'dim': 20,
         'maxiter': 32000,
         'seed': 43,
+        'dimselect': None,
     }
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:f:hi:s:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "d:e:f:hi:s:", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -148,6 +186,11 @@ if __name__ == "__main__":
     for o, a in opts:
         if o in ("-h", "--help"):
             usage(0)
+        elif o == "-e":
+            dimstrats = dict(rr=None, random=dimselect_random,
+                             mindiff=dimselect_mindiff, maxdiff=dimselect_maxdiff,
+                             diffpd=dimselect_diffpd, rdiffpd=dimselect_rdiffpd)
+            options['dimselect'] = dimstrats[a]
         elif o == "-f":
             if a == "f4":
                 options['f'] = F4
