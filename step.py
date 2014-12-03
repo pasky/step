@@ -113,15 +113,17 @@ class STEP:
             point0 = np.array(point0)  # make a copy
 
         if axis is None:
+            assert bounds[0] < point0 < bounds[1], point0
             self.points = np.array([bounds[0], point0, bounds[1]])
         else:
+            assert bounds[0][axis] <= point0[axis] <= bounds[1][axis], point0[axis]
             self.points = np.array([np.array(point0), point0, np.array(point0)])
             self.points[0][axis] = bounds[0][axis]
             self.points[2][axis] = bounds[1][axis]
             # point0 might be at the boundary; in that case, re-halve it
             if self.points[0][axis] == self.points[1][axis] or \
                self.points[1][axis] == self.points[2][axis]:
-                   self.points[1][axis] = (self.points[0][axis] + self.points[2][axis]) / 2.
+                    self.points[1][axis] = (self.points[0][axis] + self.points[2][axis]) / 2.
         self.values = np.array([self.fun(p) for p in self.points])
 
         imin, self.fmin = min(enumerate(self.values), key=itemgetter(1))
