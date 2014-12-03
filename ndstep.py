@@ -151,3 +151,34 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
 
     return dict(fun=fmin, x=xmin, nit=niter,
                 success=(niter > 1))
+
+
+def ndstep_minmethod(fun, x0, **options):
+    """
+    A scipy.optimize.minimize method callable to use for minimization
+    within the SciPy optimization framework.
+
+    Example:
+
+    >>> def f(x):
+    ...     return np.linalg.norm((x - 2) * x * (x + 2)**2)
+
+    >>> from ndstep import ndstep_minmethod
+    >>> import scipy.optimize as so
+    >>> x0 = np.array([-3, -3, -3])
+    >>> x1 = np.array([+1, +2, +3])
+    >>> p0 = np.random.rand(3)
+    >>> so.minimize(f, p0, bounds=(x0, x1), method=ndstep_minmethod, options={'disp':False, 'maxiter':2000})
+         fun: 9.3932069273767208e-16
+           x: array([-0.99996631,  2.        ,  2.0007044 ])
+         nit: 97
+     success: True
+
+    """
+    from scipy import optimize
+
+    for k in ('hess', 'hessp', 'jac', 'constraints'):
+        del options[k]
+
+    result = ndstep_minimize(fun, point0=x0, **options)
+    return optimize.OptimizeResult(**result)
