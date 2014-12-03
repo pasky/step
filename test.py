@@ -63,6 +63,7 @@ class BBOB:
         (self.f, self.fopt) = bbobbenchmarks.instantiate(fid, iinstance=iid)
 
     def opt_y(self):
+        self.optimum = self.f.xopt
         return self.fopt
 
     def __call__(self, x):
@@ -109,10 +110,7 @@ def run_ndstep(logfname, minimize_function, options):
                                 callback=lambda x, y: y - f.opt_y() <= 1e-8,
                                 logf=logf)
         res['fun'] -= f.opt_y()
-        try:
-            print(_format_solution(res, f.optimum))
-        except AttributeError:
-            print(_format_solution(res, np.nan))
+        print(_format_solution(res, f.optimum))
         if res['fun'] < globres['fun']:
             globres['fun'] = res['fun']
             globres['x'] = res['x']
@@ -121,10 +119,7 @@ def run_ndstep(logfname, minimize_function, options):
         globres['restarts'] += 1
 
     print(globres)
-    try:
-        print(_format_solution(globres, f.optimum))
-    except AttributeError:
-        print(_format_solution(globres, np.nan))
+    print(_format_solution(globres, f.optimum))
 
 
 def usage(err=2):
