@@ -43,6 +43,7 @@ from __future__ import print_function
 import copy
 import numpy as np
 from operator import itemgetter
+import warnings
 
 
 class STEP:
@@ -66,7 +67,7 @@ class STEP:
     >>> print(optimize.xmin, optimize.fmin)
 
     """
-    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7):
+    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, **options):
         """
         Set up a STEP algorithm instance on a particular function.
         This does not evaluate it in any way yet - to start optimization,
@@ -90,6 +91,10 @@ class STEP:
         # and reused by .easiest_interval(), but must be cleared anytime
         # we touch the .difficulty[] array.
         self.easiest_i_cache = None
+
+        # Warn about unrecognized options, but don't make them fatal.
+        for o in options.keys():
+            warnings.warn('STEP: Unrecognized option %s' % (o,))
 
     def begin(self, bounds, point0=None, axis=None):
         """
