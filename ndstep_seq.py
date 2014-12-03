@@ -86,7 +86,7 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=200,
 
         if disp: print('---------------- %d' % (niter_outer % dim))
         res = step_minimize(fun, bounds=bounds, point0=xmin, maxiter=maxiter_uni,
-                            axis=axis, logf=logf)
+                            axis=axis, logf=logf, staglimit=50)
         if disp: print('===>', res['x'], res['fun'])
 
         if res['fun'] < fmin:
