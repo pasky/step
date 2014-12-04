@@ -165,10 +165,8 @@ def ndstep_minmethod(fun, x0, **options):
 
     >>> from ndstep import ndstep_minmethod
     >>> import scipy.optimize as so
-    >>> x0 = np.array([-3, -3, -3])
-    >>> x1 = np.array([+1, +2, +3])
     >>> p0 = np.random.rand(3)
-    >>> so.minimize(f, p0, bounds=(x0, x1), method=ndstep_minmethod, options={'disp':False, 'maxiter':2000})
+    >>> so.minimize(f, p0, bounds=((-3,+1), (-3,+2), (-3,+3)), method=ndstep_minmethod, options={'disp':False, 'maxiter':2000})
          fun: 9.3932069273767208e-16
            x: array([-0.99996631,  2.        ,  2.0007044 ])
          nit: 97
@@ -179,6 +177,27 @@ def ndstep_minmethod(fun, x0, **options):
 
     for k in ('hess', 'hessp', 'jac', 'constraints'):
         del options[k]
+
+    # Rearrange the bounds to a more sensible form
+    bounds = [[], []]
+    for (a, b) in options['bounds']:
+        bounds[0].append(a)
+        bounds[1].append(b)
+    options['bounds'] = [np.array(bounds[0]), np.array(bounds[1])]
+
+    # Basinhopping can pick a starting point outside of our bounds;
+    # what about we move them?
+    if np.any(x0 < options['bounds'][0]):
+        options['bounds'][0] = np.array(x0)
+    elif np.any(x0 > options['bounds'][1]):
+        options['bounds'][1] = np.array(x0)
+    bounds = [np.min([options['bounds'][0], options['bounds'][1]], axis=0),
+              np.max([options['bounds'][0], options['bounds'][1]], axis=0)]
+    options['bounds'] = bounds
+
+    # Drop the second parameter of callback
+    orig_callback = options['callback']
+    options['callback'] = lambda x, f: orig_callback(x)
 
     result = ndstep_minimize(fun, point0=x0, **options)
     return optimize.OptimizeResult(**result)
