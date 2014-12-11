@@ -13,6 +13,9 @@
 # benchmark suite to the current directory, you can benchmark any of
 # these functions too by specifying e.g. -f b7 for function 7 (rotated
 # ellipsoid).
+#
+# Use -r N to repeat the measurements N times (with consecutive seeds)
+# and show the averages.
 
 from __future__ import print_function
 
@@ -157,11 +160,12 @@ def run_ndstep(logfname, minimize_function, options):
 
     print(globres)
     print(_format_solution(globres, f.optimum))
+    return globres
 
 
 def usage(err=2):
     print('Benchmark ndstep, ndstep_seq')
-    print('Usage: test.py [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-i MAXITER] [-s SEED] {ndstep,ndstep_seq}')
+    print('Usage: test.py [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-i MAXITER] [-s SEED] [-r REPEATS] {ndstep,ndstep_seq}')
     sys.exit(err)
 
 
@@ -175,9 +179,10 @@ if __name__ == "__main__":
         'seed': 43,
         'dimselect': None,
     }
+    repeats = 1
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:e:f:hi:s:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "d:e:f:hi:r:s:", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -202,6 +207,8 @@ if __name__ == "__main__":
             options['dim'] = int(a)
         elif o == "-i":
             options['maxiter'] = int(a)
+        elif o == "-r":
+            repeats = int(a)
         elif o == "-s":
             options['seed'] = int(a)
         else:
@@ -211,9 +218,23 @@ if __name__ == "__main__":
 
     # Now, actually run the circus!
 
-    if method == "ndstep":
-        run_ndstep('ndstep-log.txt', ndstep_minimize, options)
-    elif method == "ndstep_seq":
-        run_ndstep('ndstep_seq-log.txt', ndstep_seq_minimize, options)
-    else:
-        assert False
+    globres_list = []
+    for i in range(repeats):
+        if method == "ndstep":
+            globres = run_ndstep('ndstep-log.txt', ndstep_minimize, options)
+        elif method == "ndstep_seq":
+            globres = run_ndstep('ndstep_seq-log.txt', ndstep_seq_minimize, options)
+        else:
+            assert False
+        globres_list.append(globres)
+        options['seed'] += 13
+
+    if repeats > 1:
+        globres_conv = filter(lambda gr: gr['fun'] <= 1e-8, globres_list)
+        conv_ratio = float(len(globres_conv)) / len(globres_list)
+        nits = np.array([gr['nit'] for gr in globres_conv])
+        restarts = np.array([gr['restarts'] for gr in globres_conv])
+        print('% 3.1f%% converged, conv. average nit=%.1f +-%.1f, restarts=%.1f +-%.1f' %
+              (conv_ratio * 100,
+               np.mean(nits), np.std(nits),
+               np.mean(restarts), np.std(restarts)))
