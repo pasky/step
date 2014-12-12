@@ -120,6 +120,35 @@ def dimselect_rdiffpd(fun, optimize, niter, min):
         return niter % len(optimize)
 
 
+class DimSelectHistory:
+    def __init__(self, dim):
+        self.dim = dim
+        self.reset()
+    def __call__(self, fun, optimize, niter, min):
+        (xmin, fmin) = min
+        if self.lastdim >= 0:
+            if fmin < self.lastfmin:
+                self.hist[self.lastdim].append(self.lastfmin - fmin)
+            else:
+                self.hist[self.lastdim].append(0)
+        if fmin < self.lastfmin:
+            self.lastfim = fmin
+
+        if niter < self.dim * 4:
+            self.lastdim = niter % len(optimize)
+            return self.lastdim
+
+        if np.random.rand() > 0.5:
+            return np.argmax([np.mean(self.hist[i]) for i in range(len(self.hist))])
+        else:
+            return np.random.randint(len(optimize))
+
+    def reset(self):
+        self.hist = [[] for i in range(self.dim)]
+        self.lastdim = -1
+        self.lastfmin = 1e10
+
+
 def run_ndstep(logfname, minimize_function, options):
     """
     A simple testcase for speed benchmarking, etc.
@@ -157,6 +186,11 @@ def run_ndstep(logfname, minimize_function, options):
             globres['success'] = True
         globres['nit'] += res['nit']
         globres['restarts'] += 1
+        try:
+            # For stateful dimselects
+            options['dimselect'].reset()
+        except:
+            pass
 
     print(globres)
     print(_format_solution(globres, f.optimum))
@@ -194,7 +228,8 @@ if __name__ == "__main__":
         elif o == "-e":
             dimstrats = dict(rr=None, random=dimselect_random,
                              mindiff=dimselect_mindiff, maxdiff=dimselect_maxdiff,
-                             diffpd=dimselect_diffpd, rdiffpd=dimselect_rdiffpd)
+                             diffpd=dimselect_diffpd, rdiffpd=dimselect_rdiffpd,
+                             history='history')
             options['dimselect'] = dimstrats[a]
         elif o == "-f":
             if a == "f4":
@@ -215,6 +250,9 @@ if __name__ == "__main__":
             assert False, "unhandled option"
 
     method = args[0]
+
+    if options['dimselect'] == 'history':
+        options['dimselect'] = DimSelectHistory(options['dim'])
 
     # Now, actually run the circus!
 
