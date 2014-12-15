@@ -149,6 +149,43 @@ class DimSelectHistory:
         self.lastfmin = 1e10
 
 
+class DimSelectHistoryRA:
+    def __init__(self, dim):
+        self.dim = dim
+        self.reset()
+    def __call__(self, fun, optimize, niter, min):
+        # Record results of previous selection
+        (xmin, fmin) = min
+        if self.lastdim >= 0:
+            if fmin < self.lastfmin:
+                delta = self.lastfmin - fmin
+            else:
+                delta = 0
+            if self.runmean[self.lastdim] is None:
+                self.runmean[self.lastdim] = delta
+            else:
+                beta = 1/10  # 1/beta should be < stagiter
+                self.runmean[self.lastdim] = beta * delta + (1 - beta) * self.runmean[self.lastdim]
+        if fmin < self.lastfmin:
+            self.lastfim = fmin
+
+        # New selection
+
+        if niter < self.dim * 4:
+            self.lastdim = niter % len(optimize)
+            return self.lastdim
+
+        if np.random.rand() > 0.5:
+            return np.argmax([self.runmean[i] for i in range(len(self.runmean))])
+        else:
+            return np.random.randint(len(optimize))
+
+    def reset(self):
+        self.runmean = [None for i in range(self.dim)]
+        self.lastdim = -1
+        self.lastfmin = 1e10
+
+
 def run_ndstep(logfname, minimize_function, options):
     """
     A simple testcase for speed benchmarking, etc.
@@ -229,7 +266,7 @@ if __name__ == "__main__":
             dimstrats = dict(rr=None, random=dimselect_random,
                              mindiff=dimselect_mindiff, maxdiff=dimselect_maxdiff,
                              diffpd=dimselect_diffpd, rdiffpd=dimselect_rdiffpd,
-                             history='history')
+                             history='history', historyRA='historyRA')
             options['dimselect'] = dimstrats[a]
         elif o == "-f":
             if a == "f4":
@@ -253,6 +290,8 @@ if __name__ == "__main__":
 
     if options['dimselect'] == 'history':
         options['dimselect'] = DimSelectHistory(options['dim'])
+    elif options['dimselect'] == 'historyRA':
+        options['dimselect'] = DimSelectHistoryRA(options['dim'])
 
     # Now, actually run the circus!
 
