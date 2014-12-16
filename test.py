@@ -225,7 +225,8 @@ def run_ndstep(logfname, minimize_function, options):
                                 bounds=(x0, x1), point0=p0,
                                 maxiter=(options['maxiter'] - globres['nit']),
                                 callback=lambda x, y: y - f.opt_y() <= 1e-8,
-                                logf=logf, dimselect=options['dimselect'])
+                                logf=logf, dimselect=options['dimselect'],
+                                stagiter=options['stagiter'])
         res['fun'] -= f.opt_y()
         print(_format_solution(res, f.optimum))
         if res['fun'] < globres['fun']:
@@ -247,7 +248,7 @@ def run_ndstep(logfname, minimize_function, options):
 
 def usage(err=2):
     print('Benchmark ndstep, ndstep_seq')
-    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] {ndstep,ndstep_seq}')
+    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] [-t STAGITER] {ndstep,ndstep_seq}')
     sys.exit(err)
 
 
@@ -262,11 +263,12 @@ if __name__ == "__main__":
         'dimselect': None,
         'egreedy': 0.5,
         'burnin': 4,  # *D iters are spend systematically sampling first
+        'stagiter': None,  # *D iters non-improving will cause a restart
     }
     repeats = 1
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:r:s:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:r:s:t:", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -300,6 +302,8 @@ if __name__ == "__main__":
             repeats = int(a)
         elif o == "-s":
             options['seed'] = int(a)
+        elif o == "-t":
+            options['stagiter'] = int(a)
         else:
             assert False, "unhandled option"
 
