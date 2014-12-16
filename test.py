@@ -88,36 +88,24 @@ def dimselect_random(fun, optimize, niter, min):
 
 
 def dimselect_mindiff(fun, optimize, niter, min):
-    if niter >= len(optimize) * 4:
-        return np.argmin([o.difficulty[o.easiest_interval()] for o in optimize])
-    else:
-        return niter % len(optimize)
+    return np.argmin([o.difficulty[o.easiest_interval()] for o in optimize])
 
 
 def dimselect_maxdiff(fun, optimize, niter, min):
-    if niter >= len(optimize) * 4:
-        return np.argmax([o.difficulty[o.easiest_interval()] for o in optimize])
-    else:
-        return niter % len(optimize)
+    return np.argmax([o.difficulty[o.easiest_interval()] for o in optimize])
 
 
 def dimselect_diffpd(fun, optimize, niter, min):
-    if niter >= len(optimize) * 4:
-        pd = np.array([o.difficulty[o.easiest_interval()] for o in optimize])
-        pd /= np.sum(pd)
-        return np.random.choice(range(len(optimize)), p=pd)
-    else:
-        return niter % len(optimize)
+    pd = np.array([o.difficulty[o.easiest_interval()] for o in optimize])
+    pd /= np.sum(pd)
+    return np.random.choice(range(len(optimize)), p=pd)
 
 
 def dimselect_rdiffpd(fun, optimize, niter, min):
-    if niter >= len(optimize) * 4:
-        pd = np.array([o.difficulty[o.easiest_interval()] for o in optimize])
-        pd = 1. / pd
-        pd /= np.sum(pd)
-        return np.random.choice(range(len(optimize)), p=pd)
-    else:
-        return niter % len(optimize)
+    pd = np.array([o.difficulty[o.easiest_interval()] for o in optimize])
+    pd = 1. / pd
+    pd /= np.sum(pd)
+    return np.random.choice(range(len(optimize)), p=pd)
 
 
 class DimSelectHistory:
@@ -136,10 +124,6 @@ class DimSelectHistory:
             self.lastfim = fmin
 
     def __call__(self, fun, optimize, niter, min):
-        if niter < self.dim * 4:
-            self.lastdim = niter % len(optimize)
-            return self.lastdim
-
         return np.argmax([np.mean(self.hist[i]) for i in range(len(self.hist))])
 
     def reset(self):
@@ -171,10 +155,6 @@ class DimSelectHistoryRA:
 
     def __call__(self, fun, optimize, niter, min):
         # New selection
-        if niter < self.dim * 4:
-            self.lastdim = niter % len(optimize)
-            return self.lastdim
-
         return np.argmax([self.runmean[i] for i in range(len(self.runmean))])
 
     def reset(self):
@@ -200,10 +180,17 @@ class DimSelectWrapper:
         except:
             pass
 
-        if np.random.rand() > self.options['egreedy']:
-            return self.dimselect(fun, optimize, niter, min)
-        else:
+        if niter < len(optimize) * options['burnin']:
+            # Round-robin - initially
+            return niter % len(optimize)
+
+        elif np.random.rand() <= self.options['egreedy']:
+            # Random sampling - 1-epsilon frequently
             return np.random.randint(len(optimize))
+
+        else:
+            # The proper selection method
+            return self.dimselect(fun, optimize, niter, min)
 
 
 def run_ndstep(logfname, minimize_function, options):
@@ -256,7 +243,7 @@ def run_ndstep(logfname, minimize_function, options):
 
 def usage(err=2):
     print('Benchmark ndstep, ndstep_seq')
-    print('Usage: test.py [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] {ndstep,ndstep_seq}')
+    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] {ndstep,ndstep_seq}')
     sys.exit(err)
 
 
@@ -270,11 +257,12 @@ if __name__ == "__main__":
         'seed': 43,
         'dimselect': None,
         'egreedy': 0.5,
+        'burnin': 4,  # *D iters are spend systematically sampling first
     }
     repeats = 1
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:e:f:g:hi:r:s:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:r:s:", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -298,6 +286,8 @@ if __name__ == "__main__":
                 usage()
         elif o == "-g":
             options['egreedy'] = float(a)
+        elif o == "-b":
+            options['burnin'] = int(a)
         elif o == "-d":
             options['dim'] = int(a)
         elif o == "-i":
