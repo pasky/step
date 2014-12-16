@@ -140,10 +140,7 @@ class DimSelectHistory:
             self.lastdim = niter % len(optimize)
             return self.lastdim
 
-        if np.random.rand() > 0.5:
-            return np.argmax([np.mean(self.hist[i]) for i in range(len(self.hist))])
-        else:
-            return np.random.randint(len(optimize))
+        return np.argmax([np.mean(self.hist[i]) for i in range(len(self.hist))])
 
     def reset(self):
         self.hist = [[] for i in range(self.dim)]
@@ -178,10 +175,7 @@ class DimSelectHistoryRA:
             self.lastdim = niter % len(optimize)
             return self.lastdim
 
-        if np.random.rand() > 0.5:
-            return np.argmax([self.runmean[i] for i in range(len(self.runmean))])
-        else:
-            return np.random.randint(len(optimize))
+        return np.argmax([self.runmean[i] for i in range(len(self.runmean))])
 
     def reset(self):
         self.runmean = [None for i in range(self.dim)]
@@ -206,7 +200,12 @@ class DimSelectWrapper:
         except:
             pass
 
-        return self.dimselect(fun, optimize, niter, min)
+        if np.random.rand() > self.options['egreedy']:
+            return self.dimselect(fun, optimize, niter, min)
+        else:
+            return np.random.randint(len(optimize))
+
+
 def run_ndstep(logfname, minimize_function, options):
     """
     A simple testcase for speed benchmarking, etc.
@@ -257,7 +256,7 @@ def run_ndstep(logfname, minimize_function, options):
 
 def usage(err=2):
     print('Benchmark ndstep, ndstep_seq')
-    print('Usage: test.py [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-i MAXITER] [-s SEED] [-r REPEATS] {ndstep,ndstep_seq}')
+    print('Usage: test.py [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] {ndstep,ndstep_seq}')
     sys.exit(err)
 
 
@@ -270,11 +269,12 @@ if __name__ == "__main__":
         'maxiter': 32000,
         'seed': 43,
         'dimselect': None,
+        'egreedy': 0.5,
     }
     repeats = 1
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d:e:f:hi:r:s:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "d:e:f:g:hi:r:s:", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -296,6 +296,8 @@ if __name__ == "__main__":
                 options['f'] = BBOBFactory(int(a[1:]))
             else:
                 usage()
+        elif o == "-g":
+            options['egreedy'] = float(a)
         elif o == "-d":
             options['dim'] = int(a)
         elif o == "-i":
