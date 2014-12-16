@@ -113,22 +113,21 @@ class DimSelectHistory:
         self.dim = dim
         self.reset()
 
-    def update(self, min):
+    def update(self, lastdim, min):
         (xmin, fmin) = min
-        if self.lastdim >= 0:
+        if lastdim >= 0:
             if fmin < self.lastfmin:
-                self.hist[self.lastdim].append(self.lastfmin - fmin)
+                self.hist[lastdim].append(self.lastfmin - fmin)
             else:
-                self.hist[self.lastdim].append(0)
+                self.hist[lastdim].append(0)
         if fmin < self.lastfmin:
-            self.lastfim = fmin
+            self.lastfmin = fmin
 
     def __call__(self, fun, optimize, niter, min):
         return np.argmax([np.mean(self.hist[i]) for i in range(len(self.hist))])
 
     def reset(self):
         self.hist = [[] for i in range(self.dim)]
-        self.lastdim = -1
         self.lastfmin = 1e10
 
 
@@ -137,21 +136,21 @@ class DimSelectHistoryRA:
         self.dim = dim
         self.reset()
 
-    def update(self, min):
+    def update(self, lastdim, min):
         # Record results of previous selection
         (xmin, fmin) = min
-        if self.lastdim >= 0:
+        if lastdim >= 0:
             if fmin < self.lastfmin:
                 delta = self.lastfmin - fmin
             else:
                 delta = 0
-            if self.runmean[self.lastdim] is None:
-                self.runmean[self.lastdim] = delta
+            if self.runmean[lastdim] is None:
+                self.runmean[lastdim] = delta
             else:
                 beta = 1/10  # 1/beta should be < stagiter
-                self.runmean[self.lastdim] = beta * delta + (1 - beta) * self.runmean[self.lastdim]
+                self.runmean[lastdim] = beta * delta + (1 - beta) * self.runmean[lastdim]
         if fmin < self.lastfmin:
-            self.lastfim = fmin
+            self.lastfmin = fmin
 
     def __call__(self, fun, optimize, niter, min):
         # New selection
@@ -159,7 +158,6 @@ class DimSelectHistoryRA:
 
     def reset(self):
         self.runmean = [None for i in range(self.dim)]
-        self.lastdim = -1
         self.lastfmin = 1e10
 
 
@@ -172,25 +170,31 @@ class DimSelectWrapper:
     def __init__(self, options, dimselect):
         self.options = options
         self.dimselect = dimselect
+        self.lastdim = -1
 
     def __call__(self, fun, optimize, niter, min):
         try:
             # For stateful dimselects
-            self.dimselect.update(min)
+            self.dimselect.update(self.lastdim, min)
         except:
             pass
 
         if niter < len(optimize) * options['burnin']:
             # Round-robin - initially
-            return niter % len(optimize)
-
+            dim = niter % len(optimize)
         elif np.random.rand() <= self.options['egreedy']:
             # Random sampling - 1-epsilon frequently
-            return np.random.randint(len(optimize))
-
+            dim = np.random.randint(len(optimize))
         else:
             # The proper selection method
-            return self.dimselect(fun, optimize, niter, min)
+            dim = self.dimselect(fun, optimize, niter, min)
+
+        self.lastdim = dim
+        return dim
+
+    def reset(self):
+        self.lastdim = -1
+        self.dimselect.reset()
 
 
 def run_ndstep(logfname, minimize_function, options):
