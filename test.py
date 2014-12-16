@@ -83,26 +83,31 @@ class BBOBFactory:
         return BBOB(dim, self.fid, self.iid)
 
 
+def easiest_difficulties(optimize):
+    if normalize:
+        return np.array([o.difficulty[o.easiest_interval()] / np.mean(o.difficulty) for o in optimize])
+    else:
+        return np.array([o.difficulty[o.easiest_interval()] for o in optimize])
+
+
 def dimselect_random(fun, optimize, niter, min):
     return np.random.randint(len(optimize))
 
-
 def dimselect_mindiff(fun, optimize, niter, min):
-    return np.argmin([o.difficulty[o.easiest_interval()] for o in optimize])
-
+    return np.argmin(easiest_difficulties(optimize))
 
 def dimselect_maxdiff(fun, optimize, niter, min):
-    return np.argmax([o.difficulty[o.easiest_interval()] for o in optimize])
-
+    return np.argmax(easiest_difficulties(optimize))
 
 def dimselect_diffpd(fun, optimize, niter, min):
-    pd = np.array([o.difficulty[o.easiest_interval()] for o in optimize])
+    # pd = easiest_difficulties(optimize)
+    # pd = np.log(1 + easiest_difficulties(optimize))
+    pd = np.log(easiest_difficulties(optimize))
     pd /= np.sum(pd)
     return np.random.choice(range(len(optimize)), p=pd)
 
-
 def dimselect_rdiffpd(fun, optimize, niter, min):
-    pd = np.array([o.difficulty[o.easiest_interval()] for o in optimize])
+    pd = np.log(easiest_difficulties(optimize))
     pd = 1. / pd
     pd /= np.sum(pd)
     return np.random.choice(range(len(optimize)), p=pd)
@@ -266,9 +271,10 @@ if __name__ == "__main__":
         'stagiter': None,  # *D iters non-improving will cause a restart
     }
     repeats = 1
+    normalize = True
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:r:s:t:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:nNr:s:t:", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -304,6 +310,10 @@ if __name__ == "__main__":
             options['seed'] = int(a)
         elif o == "-t":
             options['stagiter'] = int(a)
+        elif o == "-n":
+            normalize = True
+        elif o == "-N":
+            normalize = False
         else:
             assert False, "unhandled option"
 
