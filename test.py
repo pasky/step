@@ -124,7 +124,8 @@ class DimSelectHistory:
     def __init__(self, dim):
         self.dim = dim
         self.reset()
-    def __call__(self, fun, optimize, niter, min):
+
+    def update(self, min):
         (xmin, fmin) = min
         if self.lastdim >= 0:
             if fmin < self.lastfmin:
@@ -134,6 +135,7 @@ class DimSelectHistory:
         if fmin < self.lastfmin:
             self.lastfim = fmin
 
+    def __call__(self, fun, optimize, niter, min):
         if niter < self.dim * 4:
             self.lastdim = niter % len(optimize)
             return self.lastdim
@@ -153,7 +155,8 @@ class DimSelectHistoryRA:
     def __init__(self, dim):
         self.dim = dim
         self.reset()
-    def __call__(self, fun, optimize, niter, min):
+
+    def update(self, min):
         # Record results of previous selection
         (xmin, fmin) = min
         if self.lastdim >= 0:
@@ -169,8 +172,8 @@ class DimSelectHistoryRA:
         if fmin < self.lastfmin:
             self.lastfim = fmin
 
+    def __call__(self, fun, optimize, niter, min):
         # New selection
-
         if niter < self.dim * 4:
             self.lastdim = niter % len(optimize)
             return self.lastdim
@@ -186,6 +189,24 @@ class DimSelectHistoryRA:
         self.lastfmin = 1e10
 
 
+class DimSelectWrapper:
+    """
+    A generic wrapper around specific dimselect methods that
+    performs some common tasks like updating history data,
+    burn-in and epsilon-greedy exploration.
+    """
+    def __init__(self, options, dimselect):
+        self.options = options
+        self.dimselect = dimselect
+
+    def __call__(self, fun, optimize, niter, min):
+        try:
+            # For stateful dimselects
+            self.dimselect.update(min)
+        except:
+            pass
+
+        return self.dimselect(fun, optimize, niter, min)
 def run_ndstep(logfname, minimize_function, options):
     """
     A simple testcase for speed benchmarking, etc.
@@ -292,6 +313,9 @@ if __name__ == "__main__":
         options['dimselect'] = DimSelectHistory(options['dim'])
     elif options['dimselect'] == 'historyRA':
         options['dimselect'] = DimSelectHistoryRA(options['dim'])
+
+    if options['dimselect'] is not None:
+        options['dimselect'] = DimSelectWrapper(options, options['dimselect'])
 
     # Now, actually run the circus!
 
