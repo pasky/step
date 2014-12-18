@@ -65,8 +65,10 @@ class BBOB:
         self.dim = dim
         (self.f, self.fopt) = bbobbenchmarks.instantiate(fid, iinstance=iid)
 
-    def opt_y(self):
+        self.f(np.zeros(dim))  # dummy eval so that we can grab xopt
         self.optimum = self.f.xopt
+
+    def opt_y(self):
         return self.fopt
 
     def __call__(self, x):
@@ -81,6 +83,22 @@ class BBOBFactory:
 
     def __call__(self, dim):
         return BBOB(dim, self.fid, self.iid)
+
+
+class BBOBExperimentFactory:
+    """ A BBOB function factory, in experiment setting (fev data recorded
+    in COCO format for future evaluation and plotting using the BBOB
+    toolchain. """
+    def __init__(self, fid, iid, f):
+        self.fid = fid
+        self.iid = iid
+        self.f = f
+
+    def __call__(self, dim):
+        bbob = BBOB(dim, self.fid, self.iid)
+        self.f.setfun(bbob.f, bbob.fopt)
+        bbob.f = self.f.evalfun  # XXX
+        return bbob
 
 
 def easiest_difficulties(optimize):
@@ -272,6 +290,7 @@ if __name__ == "__main__":
     }
     repeats = 1
     normalize = True
+    bbob_experiment = None
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:nNr:s:t:", ["help"])
@@ -294,6 +313,9 @@ if __name__ == "__main__":
                 options['f'] = F4
             elif a.startswith('b'):
                 options['f'] = BBOBFactory(int(a[1:]))
+            elif a.startswith('B'):
+                bbob_experiment = int(a[1:])
+                repeats = 15
             else:
                 usage()
         elif o == "-g":
@@ -329,8 +351,20 @@ if __name__ == "__main__":
 
     # Now, actually run the circus!
 
+    # Used only when bbob_experiment
+    bbob_instances = range(1, 6) + range(31, 41)
+    bbob_algid = "".join(sys.argv[1:]).replace('-', '')
+    bbob_opts = dict(algid=bbob_algid)
+    if bbob_experiment is not None:
+        import fgeneric
+        bbob_f = fgeneric.LoggingFunction('bbob-data/' + bbob_algid, **bbob_opts)
+
     globres_list = []
     for i in range(repeats):
+        if bbob_experiment is not None:
+            # Draw a new instance
+            options['f'] = BBOBExperimentFactory(fid=bbob_experiment, iid=bbob_instances[i], f=bbob_f)
+
         if method == "ndstep":
             globres = run_ndstep('ndstep-log.txt', ndstep_minimize, options)
         elif method == "ndstep_seq":
@@ -339,6 +373,9 @@ if __name__ == "__main__":
             assert False
         globres_list.append(globres)
         options['seed'] += 13
+
+        if bbob_experiment is not None:
+            bbob_f.finalizerun()
 
     if repeats > 1:
         globres_conv = filter(lambda gr: gr['fun'] <= 1e-8, globres_list)
