@@ -307,6 +307,7 @@ if __name__ == "__main__":
         print(err)  # will print something like "option -a not recognized"
         usage()
 
+    algid = ''
     for o, a in opts:
         if o in ("-h", "--help"):
             usage(0)
@@ -347,7 +348,14 @@ if __name__ == "__main__":
         else:
             assert False, "unhandled option"
 
+        if o != '-d' and o != '-f' and o != '-i':
+            if o != '-e':
+                algid += o[1:]
+            if a is not None:
+                algid += a
+
     method = args[0]
+    algid += method
 
     if options['dimselect'] == 'history':
         options['dimselect'] = DimSelectHistory(options['dim'])
@@ -361,11 +369,9 @@ if __name__ == "__main__":
 
     # Used only when bbob_experiment
     bbob_instances = range(1, 6) + range(31, 41)
-    bbob_algid = "".join(sys.argv[1:]).replace('-', '')
-    bbob_opts = dict(algid=bbob_algid)
     if bbob_experiment is not None:
         import fgeneric
-        bbob_f = fgeneric.LoggingFunction('bbob-data/' + bbob_algid, **bbob_opts)
+        bbob_f = fgeneric.LoggingFunction('bbob-data/' + algid, algid=algid)
 
     globres_list = []
     for i in range(repeats):
