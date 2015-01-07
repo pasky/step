@@ -101,11 +101,19 @@ class BBOBExperimentFactory:
         return bbob
 
 
+def easiest_difficulty(o):
+    i = o.easiest_interval()
+    if i is not None:
+        return o.difficulty[i]
+    else:
+        return o.maxdiff * 10
+
+
 def easiest_difficulties(optimize):
     if normalize:
-        return np.array([o.difficulty[o.easiest_interval()] / np.mean(o.difficulty) for o in optimize])
+        return np.array([easiest_difficulty(o) / np.mean(o.difficulty) for o in optimize])
     else:
-        return np.array([o.difficulty[o.easiest_interval()] for o in optimize])
+        return np.array([easiest_difficulty(o) for o in optimize])
 
 
 def dimselect_random(fun, optimize, niter, min):
