@@ -240,7 +240,7 @@ def run_ndstep(logfname, minimize_function, options):
 
     dim = options['dim']
     f = options['f'](dim)
-    logf = open(logfname, mode='w')
+    logf = None  # open(logfname, mode='w')
 
     x0 = np.zeros(dim) - 5
     x1 = np.zeros(dim) + 5
