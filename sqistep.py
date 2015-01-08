@@ -1,0 +1,308 @@
+"""
+Hybrid STEP ("Select the Easiest Point") and Successive Quadratic
+Interpolation algorithm.  It divides the function domain to intervals
+which are used for three-point quadratic interpolation or STEP
+depending on potential improvements.
+
+If you want to simply use SQISTEP for straightforward scalar optimization,
+you can invoke the ``sqistep_minimize()`` function or invoke the algorithm
+through ``scipy.optimize.minimize_scalar`` passing the return value
+of ``sqistep_minmethod()`` function as the method parameter.  Example:
+
+>>> def f(x):
+...     return (x - 2) * x * (x + 2)**2
+
+>>> from sqistep import sqistep_minimize
+>>> sqistep_minimize(f, bounds=(-10, +10), maxiter=100)
+{'fun': -9.9149495906555423,
+ 'nit': 100,
+ 'success': True,
+ 'x': 1.2807728342781046}
+
+>>> from sqistep import sqistep_minmethod
+>>> import scipy.optimize as so
+>>> so.minimize_scalar(f, bounds=(-10, +10), method=sqistep_minmethod, options={'disp':False, 'maxiter':100})
+     fun: -9.9149495906555423
+       x: 1.2807728342781046
+     nit: 100
+ success: True
+
+You can also use the SQISTEP class interface to single-step the algorithm,
+possibly even tweaking its internal data structures between iterations.
+We use that for multi-dimensional SQISTEP.
+"""
+
+from __future__ import print_function
+import copy
+import numpy as np
+
+from step import STEP
+
+
+class SQISTEP(STEP):
+    """
+    This class implements the scalar SQISTEP algorithm run in a piece-meal
+    way that allows simple scalar optimization as well as tweaking
+    of internal SQISTEP data within multidimensional wrappers.
+
+    Example:
+
+    >>> def f(x):
+    ...     return (x - 2) * x * (x + 2)**2
+
+    >>> import sqistep
+    >>> optimize = sqistep.SQISTEP(f)
+    >>> optimize.begin(bounds=(-10,10))
+    >>> for i in range(100):
+    ...     (x, y) = optimize.one_step()
+    ...     if y is None: break
+    ...     if optimize.fmin < 1e-8: break
+    >>> print(optimize.xmin, optimize.fmin)
+
+    """
+    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, **options):
+        """
+        Set up a SQISTEP algorithm instance on a particular function.
+        This does not evaluate it in any way yet - to start optimization,
+        call .begin(), then repeatedly .one_step().
+        """
+        super(SQISTEP, self).__init__(fun, epsilon, disp, tolx, maxdiff, **options)
+
+        # Will be filled in .begin():
+        self.qxmin = None  # xmin over neighboring interval pairs (NIP), quadratic interpolation
+        self.qfmin = None  # fmin over neighboring interval pairs (NIP), quadratic interpolation
+
+    def begin(self, bounds, point0=None, axis=None):
+        """
+        Initialize the algorithm with particular global interval bounds
+        and starting point (the middle of the interval by default).
+
+        If the bounds are in multi-dimensional space, axis denotes the
+        axis along which scalar optimization is performed (with the
+        other dimensions held fixed).
+        """
+        super(SQISTEP, self).begin(bounds, point0, axis)
+
+        # We make the qxmin, qfmin arrays as big as the points arrays
+        # even though in fact we use only N-2 elements instead of N.
+        self.qxmin = np.array([None, None, None])
+        self.qfmin = np.array([np.Inf, np.Inf, np.Inf])
+        self._update_qmins(0)
+        self.itercnt = 0
+
+        return (self.xmin, self.fmin)
+
+    def easiest_sqi_interval(self):
+        """
+        Easiest sequential-quadratic-interpolation NPI, if there
+        is any and the estimate is better than xmin - epsilon.
+
+        Note that to use NPI index as interval index, you should check
+        if the qxmin[i] is smaller or larger than points[i+1] - the
+        NPI covers three points, not just two!
+        """
+        i = np.argmin(self.qfmin)
+        if self.qfmin[i] <= self.fmin - self.epsilon:
+            return i
+        else:
+            return None
+
+    def one_step(self):
+        """
+        Perform one iteration of the SQISTEP algorithm, which amounts to
+        selecting the interval to halve, evaluating the function once
+        there and updating the interval difficulties.
+
+        Returns the (x, y) tuple for the selected point (this is NOT
+        the currently found optimum; grab that from .xmin, .fmin).
+        Returns (None, None) if no step could have been performed
+        anymore (this signals the algorithm should be terminated).
+        """
+
+        self.itercnt += 1
+
+        # Try SQI - but at most 4 out of 5 iterations
+        npi_i = None
+        if self.itercnt % 5 > 0:
+            npi_i = self.easiest_sqi_interval()
+        if npi_i is not None:
+            newpoint = self.qxmin[npi_i]
+            newvalue = self.qfmin[npi_i]
+            # Convert NPI index to interval index
+            if newpoint > self.points[npi_i+1]:
+                i = npi_i + 1
+                if self.disp:
+                    print('SQI chose interval %s: x=[%s %s {%s} %s] y=[%s %s {%s} %s]' %
+                          (i, self.points[npi_i], self.points[npi_i+1], newpoint, self.points[npi_i+2],
+                           self.values[npi_i], self.values[npi_i+1], newvalue, self.points[npi_i+2]))
+            else:
+                i = npi_i
+                if self.disp:
+                    print('SQI chose interval %s: x=[%s {%s} %s %s] y=[%s {%s} %s %s]' %
+                          (i, self.points[npi_i], newpoint, self.points[npi_i+1], self.points[npi_i+2],
+                           self.values[npi_i], newvalue, self.values[npi_i+1], self.values[npi_i+2]))
+
+        # Try STEP
+        else:
+            i = self.easiest_interval()
+            if i is None:
+                # No suitable interval anymore
+                return (None, None)
+
+            # Split it in half
+            newpoint = (self.points[i] + self.points[i+1]) / 2.0
+            if self.disp:
+                print('STEP chose interval %s: [%s, %s], point %s' % (i, self.points[i], self.points[i+1], newpoint))
+
+        newvalue = self.fun(newpoint)
+        self.points = np.insert(self.points, i+1, newpoint, axis=0)
+        self.values = np.insert(self.values, i+1, newvalue, axis=0)
+        self.difficulty[i] = np.nan
+        self.difficulty = np.insert(self.difficulty, i+1, np.nan, axis=0)
+        self.easiest_i_cache = None  # we touched .difficulty[]
+
+        self.qxmin = np.insert(self.qxmin, i+1, np.nan, axis=0)
+        self.qfmin = np.insert(self.qfmin, i+1, np.Inf, axis=0)
+        if i > 0:
+            self._update_qmins(i-1)
+        self._update_qmins(i)
+        self._update_qmins(i+1)
+
+        if newvalue < self.fmin:
+            # New fmin, recompute difficulties of all intervals
+            self.fmin = newvalue
+            self.xmin = copy.copy(self.points[i+1])
+            self._recompute_difficulty()
+        else:
+            # No fmin change, compute difficulties only of the two
+            # new intervals
+            self.difficulty[i:i+2] = self._interval_difficulty(self.points[i:i+3], self.values[i:i+3])
+            # .easiest_i_cache already cleared
+
+        return (newpoint, newvalue)
+
+    def update_context(self, dx, dy):
+        """
+        This special-purpose function can be used for linear translation
+        of all points and values between iterations.  We use this in ndsqistep
+        when we run one SQISTEP per dimension and assume linearly separable
+        functions; when we find a new optimum along some dimension, we
+        perform this translation in SQISTEPs of other dimensions.
+        """
+        super(SQISTEP, self).update_context(dx, dy)
+
+        self.qxmin += dx
+        self.qfmin += dy
+
+    def _update_qmins(self, i):
+        """
+        Update quadratic interpolations of NIP starting at point index i.
+        """
+        self.qxmin[i], self.qfmin[i] = self._nip_qinterp(self.points[i:i+3], self.values[i:i+3])
+
+    def _nip_qinterp(self, points, values):
+        """
+        Make a quadratic interpolation of the minimum in a neighboring
+        pair of intervals (i.e. three points on the curve).  Returns
+        the xmin and fmin of this NIP.
+        """
+        if values[1] >= values[0] or values[1] >= values[2]:
+            # This interpolation will not result in a smaller minimum
+            # than the sampled points
+            return (None, np.Inf)
+
+        xr = points[1] - points[0]
+        yr = values[1] - values[0]
+        xs = points[2] - points[0]
+        ys = values[2] - values[0]
+        a = (xr * ys - xs * yr) / (xr * xs * (xs - xr))
+        b = (yr / xr) - (xr * ys - xs * yr) / (xs * (xs - xr))
+        xm = points[0] - b / (2*a)
+        ym = values[0] - b**2 / (4*a)
+        return (xm, ym)
+
+
+def sqistep_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, point0=None, logf=None, staglimit=None, **options):
+    """
+    Minimize a given function within given bounds (a tuple of two points).
+
+    The function can be multi-variate; in that case, you can pass numpy
+    arrays as bounds, but you must also specify axis, as we still perform
+    just scalar optimization along a specified axis.
+
+    If staglimit is set to an integer, that constitutes the number of
+    iterations to stop after if no better solution has been found.
+
+    The logf file handle, if passed, is used for appending per-step
+    evaluation information in text format.
+
+    Example:
+
+    >>> def f(x):
+    ...     return (x - 2) * x * (x + 2)**2
+
+    >>> from sqistep import sqistep_minimize
+    >>> sqistep_minimize(f, bounds=(-10, +10), maxiter=100)
+    {'fun': -9.9149495906555423,
+     'nit': 100,
+     'success': True,
+     'x': 1.2807728342781046}
+    """
+
+    # Instantiate and fire off the SQISTEP algorithm
+    optimize = SQISTEP(fun, **options)
+    optimize.begin(bounds, point0=point0, axis=axis)
+
+    niter = 0
+    last_improvement = 0
+    while niter < maxiter:
+        if staglimit is not None and niter - last_improvement > staglimit:
+            break
+
+        y0 = optimize.fmin
+
+        (x, y) = optimize.one_step()
+        if y is None:
+            break
+
+        if logf:
+            print("%d,%d,%e,%s,%d" % (axis, y < y0, y, ','.join(["%e" % xi for xi in x]), niter), file=logf)
+
+        if y < y0:
+            last_improvement = niter
+
+        if callback is not None:
+            if callback(optimize.xmin):
+                break
+
+        niter += 1
+
+    return dict(fun=optimize.fmin, x=optimize.xmin, nit=niter,
+                success=(niter > 1))
+
+
+def sqistep_minmethod(fun, **options):
+    """
+    A scipy.optimize.minimize_scalar method callable to use for minimization
+    within the SciPy optimization framework.
+
+    Example:
+
+    >>> def f(x):
+    ...     return (x - 2) * x * (x + 2)**2
+
+    >>> from sqistep import sqistep_minmethod
+    >>> import scipy.optimize as so
+    >>> so.minimize_scalar(f, bounds=(-10, +10), method=sqistep_minmethod(), options={'disp':False, 'maxiter':100})
+         fun: -9.9149495906555423
+           x: 1.2807728342781046
+         nit: 100
+     success: True
+
+    """
+    from scipy import optimize
+
+    del options['bracket']
+
+    result = sqistep_minimize(fun, **options)
+    return optimize.OptimizeResult(**result)

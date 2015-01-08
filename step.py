@@ -46,7 +46,7 @@ from operator import itemgetter
 import warnings
 
 
-class STEP:
+class STEP(object):
     """
     This class implements the scalar STEP algorithm run in a piece-meal
     way that allows simple scalar optimization as well as tweaking
