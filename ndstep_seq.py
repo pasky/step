@@ -32,7 +32,7 @@ import numpy as np
 from step import step_minimize
 
 
-def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=200,
+def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=1000,
                         callback=None, point0=None, dimselect=None, logf=None,
                         **options):
     """
@@ -86,7 +86,7 @@ def ndstep_seq_minimize(fun, bounds, args=(), maxiter=2000, maxiter_uni=200,
 
         if disp: print('---------------- %d' % (niter_outer % dim))
         res = step_minimize(fun, bounds=bounds, point0=xmin, maxiter=maxiter_uni,
-                            axis=axis, logf=logf, staglimit=50)
+                            axis=axis, logf=logf, staglimit=maxiter_uni)
         if disp: print('===>', res['x'], res['fun'])
 
         if res['fun'] < fmin:
