@@ -25,6 +25,7 @@ import sys
 
 from ndstep import ndstep_minimize
 from ndstep_seq import ndstep_seq_minimize
+from scipy_seq import scipy_seq_minimize
 
 
 def _format_solution(res, optimum):
@@ -257,7 +258,7 @@ def run_ndstep(logfname, minimize_function, options):
                                 maxiter=(options['maxiter'] - globres['nit']),
                                 callback=lambda x, y: y - f.opt_y() <= 1e-8,
                                 logf=logf, dimselect=options['dimselect'],
-                                stagiter=options['stagiter'])
+                                stagiter=options['stagiter'], disp=True)
         res['fun'] -= f.opt_y()
         print(_format_solution(res, f.optimum))
         if res['fun'] < globres['fun']:
@@ -278,8 +279,8 @@ def run_ndstep(logfname, minimize_function, options):
 
 
 def usage(err=2):
-    print('Benchmark ndstep, ndstep_seq')
-    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] [-t STAGITER] {ndstep,ndstep_seq}')
+    print('Benchmark ndstep, ndstep_seq, scipy_seq')
+    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] [-t STAGITER] {ndstep,ndstep_seq,scipy_seq}')
     sys.exit(err)
 
 
@@ -383,6 +384,8 @@ if __name__ == "__main__":
             globres = run_ndstep('ndstep-log.txt', ndstep_minimize, options)
         elif method == "ndstep_seq":
             globres = run_ndstep('ndstep_seq-log.txt', ndstep_seq_minimize, options)
+        elif method == "scipy_seq":
+            globres = run_ndstep('scipy_seq-log.txt', scipy_seq_minimize, options)
         else:
             assert False
         globres_list.append(globres)
