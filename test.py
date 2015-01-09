@@ -112,6 +112,14 @@ def easiest_difficulty(o):
         return o.maxdiff * 10
 
 
+def easiest_sqi(o):
+    i = o.easiest_sqi_interval()
+    if i is not None:
+        return o.qfmin[i]
+    else:
+        return np.Inf
+
+
 def easiest_difficulties(optimize):
     if normalize:
         return np.array([easiest_difficulty(o) / np.mean(o.difficulty) for o in optimize])
@@ -124,6 +132,15 @@ def dimselect_random(fun, optimize, niter, min):
 
 def dimselect_mindiff(fun, optimize, niter, min):
     return np.argmin(easiest_difficulties(optimize))
+
+def dimselect_minsqi(fun, optimize, niter, min):
+    # SQISTEP specific
+    sqis = np.array([easiest_sqi(o) for o in optimize])
+    bestsqi = np.argmin(sqis)
+    if sqis[bestsqi] == np.inf:
+        return dimselect_random(fun, optimize, niter, min)
+    else:
+        return bestsqi
 
 def dimselect_maxdiff(fun, optimize, niter, min):
     return np.argmax(easiest_difficulties(optimize))
@@ -323,7 +340,8 @@ if __name__ == "__main__":
             dimstrats = dict(rr=None, random=dimselect_random,
                              mindiff=dimselect_mindiff, maxdiff=dimselect_maxdiff,
                              diffpd=dimselect_diffpd, rdiffpd=dimselect_rdiffpd,
-                             history='history', historyRA='historyRA')
+                             history='history', historyRA='historyRA',
+                             minsqi=dimselect_minsqi)
             options['dimselect'] = dimstrats[a]
         elif o == "-f":
             if a == "f4":
