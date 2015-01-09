@@ -142,7 +142,7 @@ class SQISTEP(STEP):
                 if self.disp:
                     print('SQI chose interval %s: x=[%s %s {%s} %s] y=[%s %s {%s} %s]' %
                           (i, self.points[npi_i], self.points[npi_i+1], newpoint, self.points[npi_i+2],
-                           self.values[npi_i], self.values[npi_i+1], newvalue, self.points[npi_i+2]))
+                           self.values[npi_i], self.values[npi_i+1], newvalue, self.values[npi_i+2]))
             else:
                 i = npi_i
                 if self.disp:
