@@ -60,7 +60,7 @@ class SQISTEP(STEP):
     >>> print(optimize.xmin, optimize.fmin)
 
     """
-    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, force_STEP=5, **options):
+    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, force_STEP=5, split_at_pred=True, **options):
         """
         Set up a SQISTEP algorithm instance on a particular function.
         This does not evaluate it in any way yet - to start optimization,
@@ -73,6 +73,7 @@ class SQISTEP(STEP):
         super(SQISTEP, self).__init__(fun, epsilon, disp, tolx, maxdiff, **options)
 
         self.force_STEP = force_STEP
+        self.split_at_pred = split_at_pred
 
         # Will be filled in .begin():
         self.qxmin = None  # xmin over neighboring interval pairs (NIP), quadratic interpolation
@@ -141,6 +142,7 @@ class SQISTEP(STEP):
         if npi_i is not None:
             newpoint = self.qxmin[npi_i]
             newvalue = self.qfmin[npi_i]
+
             # Convert NPI index to interval index
             if ((self.axis is None and newpoint > self.points[npi_i+1]) or
                (self.axis is not None and newpoint[self.axis] > self.points[npi_i+1][self.axis])):
@@ -155,6 +157,12 @@ class SQISTEP(STEP):
                     print('SQI chose interval %s: x=[%s {%s} %s %s] y=[%s {%s} %s %s]' %
                           (i, self.points[npi_i], newpoint, self.points[npi_i+1], self.points[npi_i+2],
                            self.values[npi_i], newvalue, self.values[npi_i+1], self.values[npi_i+2]))
+
+            if not self.split_at_pred:
+                # Actually split in half instead, best point
+                # predictions may be overbiased for quadratic
+                # function
+                newpoint = (self.points[i] + self.points[i+1]) / 2.0
 
         # Try STEP
         else:
