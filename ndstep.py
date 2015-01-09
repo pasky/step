@@ -33,7 +33,7 @@ from step import STEP
 
 def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
                     point0=None, dimselect=None, stagiter=None, logf=None,
-                    **options):
+                    stclass=STEP, **options):
     """
     Minimize a given multivariate function within given bounds
     (a tuple of two points).
@@ -86,7 +86,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
     xmin = np.array(point0)
     fmin = fun(point0)
 
-    optimize = [STEP(fun, **options) for i in range(dim)]
+    optimize = [stclass(fun, **options) for i in range(dim)]
     for i in range(dim):
         (x, y) = optimize[i].begin(bounds, point0=xmin, axis=i)
 
