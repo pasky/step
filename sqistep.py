@@ -60,13 +60,19 @@ class SQISTEP(STEP):
     >>> print(optimize.xmin, optimize.fmin)
 
     """
-    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, **options):
+    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, force_STEP=5, **options):
         """
         Set up a SQISTEP algorithm instance on a particular function.
         This does not evaluate it in any way yet - to start optimization,
         call .begin(), then repeatedly .one_step().
+
+        If force_STEP = N > 0, every N iterations STEP is forcibly invoked
+        instead of (potentially) SQI.  SQI may exhibit slow convergence
+        when the function is quite non-quadratic.
         """
         super(SQISTEP, self).__init__(fun, epsilon, disp, tolx, maxdiff, **options)
+
+        self.force_STEP = force_STEP
 
         # Will be filled in .begin():
         self.qxmin = None  # xmin over neighboring interval pairs (NIP), quadratic interpolation
@@ -128,9 +134,9 @@ class SQISTEP(STEP):
 
         self.itercnt += 1
 
-        # Try SQI - but at most 4 out of 5 iterations
+        # Try SQI - except on some iterations, forcibly do STEP
         npi_i = None
-        if self.itercnt % 5 > 0:
+        if self.force_STEP == 0 or self.itercnt % self.force_STEP > 0:
             npi_i = self.easiest_sqi_interval()
         if npi_i is not None:
             newpoint = self.qxmin[npi_i]

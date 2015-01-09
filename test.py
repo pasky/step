@@ -261,6 +261,7 @@ def run_ndstep(logfname, minimize_function, options, stclass=STEP, minf=step_min
                                 callback=lambda x, y: y - f.opt_y() <= 1e-8,
                                 logf=logf, dimselect=options['dimselect'],
                                 stagiter=options['stagiter'],
+                                force_STEP=options['force_STEP'],
                                 stclass=stclass, minf=minf)
         res['fun'] -= f.opt_y()
         print(_format_solution(res, f.optimum))
@@ -283,7 +284,7 @@ def run_ndstep(logfname, minimize_function, options, stclass=STEP, minf=step_min
 
 def usage(err=2):
     print('Benchmark ndstep, ndstep_seq, ndsqistep, ndsqistep_seq, scipy_seq')
-    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] [-t STAGITER] {nd[sqi]step,nd[sqi]step_seq,scipy_seq}')
+    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] [-t STAGITER] [-I FORCE_STEP_I] {nd[sqi]step,nd[sqi]step_seq,scipy_seq}')
     sys.exit(err)
 
 
@@ -299,13 +300,14 @@ if __name__ == "__main__":
         'egreedy': 0.5,
         'burnin': 4,  # *D iters are spend systematically sampling first
         'stagiter': None,  # *D iters non-improving will cause a restart
+        'force_STEP': 5,  # SQISTEP specific
     }
     repeats = 1
     normalize = True
     bbob_experiment = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:nNr:s:t:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:nNr:s:I:t:", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -339,6 +341,8 @@ if __name__ == "__main__":
             options['dim'] = int(a)
         elif o == "-i":
             options['maxiter'] = int(a)
+        elif o == "-I":
+            options['force_STEP'] = int(a)
         elif o == "-r":
             repeats = int(a)
         elif o == "-s":
