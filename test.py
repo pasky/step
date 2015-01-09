@@ -258,7 +258,7 @@ def run_ndstep(logfname, minimize_function, options):
                                 maxiter=(options['maxiter'] - globres['nit']),
                                 callback=lambda x, y: y - f.opt_y() <= 1e-8,
                                 logf=logf, dimselect=options['dimselect'],
-                                stagiter=options['stagiter'], disp=True)
+                                stagiter=options['stagiter'])
         res['fun'] -= f.opt_y()
         print(_format_solution(res, f.optimum))
         if res['fun'] < globres['fun']:
