@@ -85,7 +85,7 @@ class SQISTEP(STEP):
 
         # We make the qxmin, qfmin arrays as big as the points arrays
         # even though in fact we use only N-2 elements instead of N.
-        self.qxmin = np.array([None, None, None])
+        self.qxmin = np.array([self.mdpoint(None), self.mdpoint(None), self.mdpoint(None)])
         self.qfmin = np.array([np.Inf, np.Inf, np.Inf])
         self._update_qmins(0)
         self.itercnt = 0
@@ -106,6 +106,13 @@ class SQISTEP(STEP):
             return i
         else:
             return None
+
+    def mdpoint(self, x):
+        if self.axis is None:
+            return x
+        mdx = np.array(self.points[0])
+        mdx[self.axis] = x
+        return mdx
 
     def one_step(self):
         """
@@ -129,7 +136,8 @@ class SQISTEP(STEP):
             newpoint = self.qxmin[npi_i]
             newvalue = self.qfmin[npi_i]
             # Convert NPI index to interval index
-            if newpoint > self.points[npi_i+1]:
+            if ((self.axis is None and newpoint > self.points[npi_i+1]) or
+               (self.axis is not None and newpoint[self.axis] > self.points[npi_i+1][self.axis])):
                 i = npi_i + 1
                 if self.disp:
                     print('SQI chose interval %s: x=[%s %s {%s} %s] y=[%s %s {%s} %s]' %
@@ -161,12 +169,14 @@ class SQISTEP(STEP):
         self.difficulty = np.insert(self.difficulty, i+1, np.nan, axis=0)
         self.easiest_i_cache = None  # we touched .difficulty[]
 
-        self.qxmin = np.insert(self.qxmin, i+1, np.nan, axis=0)
+        self.qxmin = np.insert(self.qxmin, i+1, self.mdpoint(np.nan), axis=0)
         self.qfmin = np.insert(self.qfmin, i+1, np.Inf, axis=0)
         if i > 0:
             self._update_qmins(i-1)
-        self._update_qmins(i)
-        self._update_qmins(i+1)
+        if i < np.size(self.points, axis=0) - 2:
+            self._update_qmins(i)
+        if i+1 < np.size(self.points, axis=0) - 2:
+            self._update_qmins(i+1)
 
         if newvalue < self.fmin:
             # New fmin, recompute difficulties of all intervals
@@ -211,15 +221,22 @@ class SQISTEP(STEP):
             # than the sampled points
             return (None, np.Inf)
 
-        xr = points[1] - points[0]
+        if self.axis is None:
+            x0 = points[0]
+            xr = points[1] - points[0]
+            xs = points[2] - points[0]
+        else:
+            x0 = points[0][self.axis]
+            xr = points[1][self.axis] - points[0][self.axis]
+            xs = points[2][self.axis] - points[0][self.axis]
         yr = values[1] - values[0]
-        xs = points[2] - points[0]
         ys = values[2] - values[0]
         a = (xr * ys - xs * yr) / (xr * xs * (xs - xr))
         b = (yr / xr) - (xr * ys - xs * yr) / (xs * (xs - xr))
-        xm = points[0] - b / (2*a)
+        xm = x0 - b / (2*a)
         ym = values[0] - b**2 / (4*a)
-        return (xm, ym)
+
+        return (self.mdpoint(xm), ym)
 
 
 def sqistep_minimize(fun, bounds, args=(), maxiter=100, callback=None, axis=None, point0=None, logf=None, staglimit=None, **options):
