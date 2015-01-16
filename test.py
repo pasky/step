@@ -400,7 +400,7 @@ if __name__ == "__main__":
     # Now, actually run the circus!
 
     # Used only when bbob_experiment
-    bbob_instances = range(1, 6) + range(31, 41)
+    bbob_instances = range(1, 6) + range(41, 51)
     if bbob_experiment is not None:
         import fgeneric
         bbob_f = fgeneric.LoggingFunction('bbob-data/' + algid, algid=algid)
