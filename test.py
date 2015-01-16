@@ -315,10 +315,10 @@ if __name__ == "__main__":
         'maxiter': 32000,
         'seed': 43,
         'dimselect': None,
-        'egreedy': 0.5,
+        'egreedy': 0,
         'burnin': 4,  # *D iters are spend systematically sampling first
         'stagiter': None,  # *D iters non-improving will cause a restart
-        'force_STEP': 5,  # SQISTEP specific
+        'force_STEP': 0,  # SQISTEP specific
         'split_at_pred': True,  # SQISTEP specific
     }
     repeats = 1
