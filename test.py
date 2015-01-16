@@ -295,8 +295,8 @@ def run_ndstep(logfname, minimize_function, options, stclass=STEP, minf=step_min
         except:
             pass
 
-    print(globres)
-    print(_format_solution(globres, f.optimum))
+    print('>>', globres)
+    print('>>', _format_solution(globres, f.optimum))
     return globres
 
 
