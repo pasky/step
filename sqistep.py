@@ -109,12 +109,17 @@ class SQISTEP(STEP):
         NPI covers three points, not just two!
         """
         i = np.argmin(self.qfmin)
-        if self.qfmin[i] <= self.fmin - self.epsilon:
+        if self.qfmin[i] <= self.fmin - self.epsilon \
+           and self.qxmin[i] - self.points[i] > self.tolx \
+           and self.points[i+1] - self.qxmin[i] > self.tolx:
             return i
         else:
             return None
 
     def mdpoint(self, x):
+        """
+        Generate a multi-dimensional point from scalar x.
+        """
         if self.axis is None:
             return x
         mdx = np.array(self.points[0])
@@ -135,7 +140,7 @@ class SQISTEP(STEP):
 
         self.itercnt += 1
 
-        # Try SQI - except on some iterations, forcibly do STEP
+        # Try SQI - except on some iterations, maybe forcibly do STEP
         npi_i = None
         if self.force_STEP == 0 or self.itercnt % self.force_STEP > 0:
             npi_i = self.easiest_sqi_interval()
@@ -237,18 +242,61 @@ class SQISTEP(STEP):
 
         if self.axis is None:
             x0 = points[0]
-            xr = points[1] - points[0]
-            xs = points[2] - points[0]
+            xr = points[1]
+            xs = points[2]
         else:
             x0 = points[0][self.axis]
-            xr = points[1][self.axis] - points[0][self.axis]
-            xs = points[2][self.axis] - points[0][self.axis]
-        yr = values[1] - values[0]
-        ys = values[2] - values[0]
-        a = (xr * ys - xs * yr) / (xr * xs * (xs - xr))
-        b = (yr / xr) - (xr * ys - xs * yr) / (xs * (xs - xr))
-        xm = x0 - b / (2*a)
-        ym = values[0] - b**2 / (4*a)
+            xr = points[1][self.axis]
+            xs = points[2][self.axis]
+        y0 = values[0]
+        yr = values[1]
+        ys = values[2]
+
+        # Compute a,b for ym estimate
+        # XXX: Use the coefficients below instead
+        XR = xr - x0
+        XS = xs - x0
+        YR = yr - y0
+        YS = ys - y0
+        a = (XR * YS - XS * YR) / (XR * XS * (XS - XR))
+        b = (YR / XR) - (XR * YS - XS * YR) / (XS * (XS - XR))
+        if False:
+            # This is the original computation by Petr Posik
+            xm = x0 - b / (2*a)
+            ym = y0 - b**2 / (4*a)
+            return (self.mdpoint(xm), ym)
+
+        xa = x0 if y0 > ys else xs  # worse of boundaries
+        ya = y0 if y0 > ys else ys  # worse of boundaries
+        xb = x0 if y0 <= ys else xs  # better of boundaries
+        yb = y0 if y0 <= ys else ys  # better of boundaries
+
+        R = (xr-xb) * (yr-ya)
+        Q0 = (xr-xa) * (yr-yb)
+        P = (xr-xa) * Q0 - (xr-xb) * R
+        Q = 2 * (Q0 - R)
+        if Q > 0:
+            P = -P
+        Q = abs(Q)
+
+        # We use the Brent algorithm condition (only with non-historical
+        # etemp; see Numerical Recipes Ch10.2) to decide whether to accept
+        # the new point:
+        p = P
+        q = Q
+        etemp = min(xr - x0, xs - xr)  # delta between middle and boundary point
+        if not (abs(p) < abs(0.5 * q * etemp) and p > q*(x0-xr) and p < q*(xs-xr)):
+            # print('rejecting %s,%s,%s sample %s' % (x0, xr, xs, x0 - p/q))
+            # return (None, np.Inf)
+            if xr >= (xs-x0) / 2:
+                d = 0.3819660 * (x0-xr)
+            else:
+                d = 0.3819660 * (xs-xr)
+        else:
+            d = p/q
+
+        xm = xr + d
+        ym = y0 - b**2 / (4*a)
 
         return (self.mdpoint(xm), ym)
 
