@@ -288,7 +288,7 @@ class SQISTEP(STEP):
         if not (abs(p) < abs(0.5 * q * etemp) and p > q*(x0-xr) and p < q*(xs-xr)):
             # print('rejecting %s,%s,%s sample %s' % (x0, xr, xs, x0 - p/q))
             # return (None, np.Inf)
-            if xr >= (xs-x0) / 2:
+            if xr >= (xs+x0) / 2:
                 d = 0.3819660 * (x0-xr)
             else:
                 d = 0.3819660 * (xs-xr)
