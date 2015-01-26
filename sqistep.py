@@ -287,18 +287,18 @@ class SQISTEP(STEP):
         # We use the Brent algorithm condition (only with non-historical
         # etemp; see Numerical Recipes Ch10.2) to decide whether to accept
         # the new point:
-        p = P
-        q = Q
+        step = P/Q
         etemp = min(xr - x0, xs - xr)  # delta between middle and boundary point
-        if not (abs(p) < abs(0.5 * q * etemp) and p > q*(x0-xr) and p < q*(xs-xr)):
-            # print('rejecting %s,%s,%s sample %s' % (x0, xr, xs, x0 - p/q))
+        if abs(step) < 0.5 * etemp and xr + step > x0 and xr + step < xs:
+            d = step
+        else:
+            # Take a golden ratio step instead
+            # print('rejecting %s,%s,%s sample %s' % (x0, xr, xs, xr + step))
             # return (None, np.Inf)
             if xr >= (xs+x0) / 2:
                 d = 0.3819660 * (x0-xr)
             else:
                 d = 0.3819660 * (xs-xr)
-        else:
-            d = p/q
 
         xm = xr + d
         ym = y0 - b**2 / (4*a)
