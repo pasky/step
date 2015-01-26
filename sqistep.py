@@ -35,6 +35,7 @@ We use that for multi-dimensional SQISTEP.
 from __future__ import print_function
 import copy
 import numpy as np
+from operator import itemgetter
 
 from step import STEP
 
@@ -108,13 +109,17 @@ class SQISTEP(STEP):
         if the qxmin[i] is smaller or larger than points[i+1] - the
         NPI covers three points, not just two!
         """
-        i = np.argmin(self.qfmin)
-        if self.qfmin[i] <= self.fmin - self.epsilon \
-           and self.qxmin[i] - self.points[i] > self.tolx \
-           and self.points[i+1] - self.qxmin[i] > self.tolx:
-            return i
-        else:
-            return None
+        # Do not take guesses that are too near one of the interval
+        # boundaries
+        qxmin_suitable = np.logical_and(self.qxmin - self.points > self.tolx,
+                                        np.roll(self.points, -1) - self.qxmin > self.tolx)
+        iqfmin = filter(lambda (i, qfmin): qxmin_suitable[i], enumerate(self.qfmin))
+        if len(iqfmin) == 0:
+            return None  # We cannot split further
+        i, qfmin = min(iqfmin, key=itemgetter(1))
+        if qfmin > self.fmin - self.epsilon:
+            return None  # Even the best estimate is too high
+        return i
 
     def mdpoint(self, x):
         """
