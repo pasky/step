@@ -290,10 +290,11 @@ class SQISTEP(STEP):
         step = P/Q
         etemp = min(xr - x0, xs - xr)  # delta between middle and boundary point
         if abs(step) < 0.5 * etemp and xr + step > x0 and xr + step < xs:
+            # print('accepting %s,%s,%s step %s sample %s' % (x0, xr, xs, step, xr + step))
             d = step
         else:
             # Take a golden ratio step instead
-            # print('rejecting %s,%s,%s sample %s' % (x0, xr, xs, xr + step))
+            # print('rejecting %s,%s,%s step %s sample %s' % (x0, xr, xs, step, xr + step))
             # return (None, np.Inf)
             if xr >= (xs+x0) / 2:
                 d = 0.3819660 * (x0-xr)
