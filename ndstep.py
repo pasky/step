@@ -45,7 +45,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
 
     The stopping condition is either maxiter total iterations or when
     stagiter optimization steps are done without reaching an improvement
-    (whichever comes first).  By default, stagiter is 50*DIM.
+    (whichever comes first).  By default, stagiter is 2000.
 
     Dimensions are selected using a round-robin strategy by default.
     You can pass a custom dimension selection function that is called
@@ -80,7 +80,7 @@ def ndstep_minimize(fun, bounds, args=(), maxiter=2000, callback=None,
     dim = np.shape(bounds[0])[0]
     disp = options.get('disp', False)
     if stagiter is None:
-        stagiter = 50 * dim
+        stagiter = 2000
     callback_interval = 10 * dim
 
     xmin = np.array(point0)
