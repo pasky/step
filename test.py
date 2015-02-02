@@ -280,6 +280,7 @@ def run_ndstep(logfname, minimize_function, options, stclass=STEP, minf=step_min
                                 stagiter=options['stagiter'],
                                 force_STEP=options['force_STEP'],
                                 split_at_pred=options['split_at_pred'],
+                                posik_SQI=options['posik_SQI'],
                                 stclass=stclass, minf=minf)
         res['fun'] -= f.opt_y()
         print(_format_solution(res, f.optimum))
@@ -302,7 +303,7 @@ def run_ndstep(logfname, minimize_function, options, stclass=STEP, minf=step_min
 
 def usage(err=2):
     print('Benchmark ndstep, ndstep_seq, ndsqistep, ndsqistep_seq, scipy_seq')
-    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] [-t STAGITER] [-I FORCE_STEP_I] [-p|-P] {nd[sqi]step,nd[sqi]step_seq,scipy_seq}')
+    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] [-t STAGITER] [-I FORCE_STEP_I] [-p|-P] [-o] {nd[sqi]step,nd[sqi]step_seq,scipy_seq}')
     sys.exit(err)
 
 
@@ -320,13 +321,14 @@ if __name__ == "__main__":
         'stagiter': None,  # *D iters non-improving will cause a restart
         'force_STEP': 0,  # SQISTEP specific
         'split_at_pred': True,  # SQISTEP specific
+        'posik_SQI': False,  # SQISTEP specific
     }
     repeats = 1
     normalize = True
     bbob_experiment = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:nNpPr:s:I:t:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:nNopPr:s:I:t:", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -367,6 +369,8 @@ if __name__ == "__main__":
             options['split_at_pred'] = True
         elif o == "-P":
             options['split_at_pred'] = False
+        elif o == "-o":
+            options['posik_SQI'] = True
         elif o == "-r":
             repeats = int(a)
         elif o == "-s":

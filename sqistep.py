@@ -61,7 +61,7 @@ class SQISTEP(STEP):
     >>> print(optimize.xmin, optimize.fmin)
 
     """
-    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, force_STEP=5, split_at_pred=True, **options):
+    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, force_STEP=5, split_at_pred=True, posik_SQI=False, **options):
         """
         Set up a SQISTEP algorithm instance on a particular function.
         This does not evaluate it in any way yet - to start optimization,
@@ -70,11 +70,20 @@ class SQISTEP(STEP):
         If force_STEP = N > 0, every N iterations STEP is forcibly invoked
         instead of (potentially) SQI.  SQI may exhibit slow convergence
         when the function is quite non-quadratic.
+
+        split_at_pred set to False will keep SQI in use for interval selection,
+        but when an interval is selected, it is sampled in its half, not at the
+        predicted minimum point.  (This might help some convergence issues when
+        the minimum is continuously predicted very close to one of endpoints.)
+
+        posik_SQI set to True will cause the Posik method of SQI to be used
+        instead of the Brent method.
         """
         super(SQISTEP, self).__init__(fun, epsilon, disp, tolx, maxdiff, **options)
 
         self.force_STEP = force_STEP
         self.split_at_pred = split_at_pred
+        self.posik_SQI = posik_SQI
 
         # Will be filled in .begin():
         self.qxmin = None  # xmin over neighboring interval pairs (NIP), quadratic interpolation
@@ -265,7 +274,7 @@ class SQISTEP(STEP):
         YS = ys - y0
         a = (XR * YS - XS * YR) / (XR * XS * (XS - XR))
         b = (YR / XR) - (XR * YS - XS * YR) / (XS * (XS - XR))
-        if False:
+        if self.posik_SQI:
             # This is the original computation by Petr Posik
             xm = x0 - b / (2*a)
             ym = y0 - b**2 / (4*a)
