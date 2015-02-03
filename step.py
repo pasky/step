@@ -44,6 +44,7 @@ import copy
 import numpy as np
 from operator import itemgetter
 import warnings
+import pylab
 
 
 class STEP(object):
@@ -205,6 +206,14 @@ class STEP(object):
         else:
             delta = self.points[1:, self.axis] - self.points[:-1, self.axis]
         interval_wide_enough = delta >= self.tolx
+
+        if self.disp:
+            xx = np.array([x[0] for x in self.points])
+            pylab.figure(1, figsize=(6,4))
+            pylab.plot(xx, self.values, 'b')
+            pylab.plot((xx[1:] + xx[:-1]) / 2, np.log(self.difficulty), 'k.')
+            pylab.show()
+            pylab.close()
 
         idiff = filter(lambda (i, diff): interval_wide_enough[i], enumerate(self.difficulty))
         if len(idiff) == 0:
