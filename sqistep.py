@@ -119,9 +119,9 @@ class SQISTEP(STEP):
         NIP covers three points, not just two!
         """
         # Do not take guesses that are too near one of the interval
-        # boundaries
+        # pair boundaries
         qxmin_suitable = np.logical_and(self.qxmin - self.points > self.tolx,
-                                        np.roll(self.points, -1) - self.qxmin > self.tolx)
+                                        np.roll(self.points, -2) - self.qxmin > self.tolx)
         iqfmin = filter(lambda (i, qfmin): qxmin_suitable[i], enumerate(self.qfmin))
         if len(iqfmin) == 0:
             return None  # We cannot split further
