@@ -281,7 +281,8 @@ def run_ndstep(logfname, minimize_function, options, stclass=STEP, minf=step_min
                                 force_STEP=options['force_STEP'],
                                 split_at_pred=options['split_at_pred'],
                                 posik_SQI=options['posik_SQI'],
-                                stclass=stclass, minf=minf)
+                                stclass=stclass, minf=minf,
+                                disp=options['disp'])
         res['fun'] -= f.opt_y()
         print(_format_solution(res, f.optimum))
         if res['fun'] < globres['fun']:
@@ -322,13 +323,14 @@ if __name__ == "__main__":
         'force_STEP': 0,  # SQISTEP specific
         'split_at_pred': True,  # SQISTEP specific
         'posik_SQI': False,  # SQISTEP specific
+        'disp': False,
     }
     repeats = 1
     normalize = True
     bbob_experiment = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:nNopPr:s:I:t:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:nNopPr:s:I:t:v", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -381,6 +383,8 @@ if __name__ == "__main__":
             normalize = True
         elif o == "-N":
             normalize = False
+        elif o == "-v":
+            options['disp'] = True
         else:
             assert False, "unhandled option"
 
