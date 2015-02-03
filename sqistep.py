@@ -111,12 +111,12 @@ class SQISTEP(STEP):
 
     def easiest_sqi_interval(self):
         """
-        Easiest sequential-quadratic-interpolation NPI, if there
+        Easiest sequential-quadratic-interpolation NIP, if there
         is any and the estimate is better than xmin - epsilon.
 
-        Note that to use NPI index as interval index, you should check
+        Note that to use NIP index as interval index, you should check
         if the qxmin[i] is smaller or larger than points[i+1] - the
-        NPI covers three points, not just two!
+        NIP covers three points, not just two!
         """
         # Do not take guesses that are too near one of the interval
         # boundaries
@@ -162,7 +162,7 @@ class SQISTEP(STEP):
             newpoint = self.qxmin[npi_i]
             newvalue = self.qfmin[npi_i]
 
-            # Convert NPI index to interval index
+            # Convert NIP index to interval index
             if ((self.axis is None and newpoint > self.points[npi_i+1]) or
                (self.axis is not None and newpoint[self.axis] > self.points[npi_i+1][self.axis])):
                 i = npi_i + 1
