@@ -279,6 +279,7 @@ def run_ndstep(logfname, minimize_function, options, stclass=STEP, minf=step_min
                                 logf=logf, dimselect=options['dimselect'],
                                 stagiter=options['stagiter'],
                                 force_STEP=options['force_STEP'],
+                                force_Brent=options['force_Brent'],
                                 split_at_pred=options['split_at_pred'],
                                 posik_SQI=options['posik_SQI'],
                                 stclass=stclass, minf=minf,
@@ -304,7 +305,7 @@ def run_ndstep(logfname, minimize_function, options, stclass=STEP, minf=step_min
 
 def usage(err=2):
     print('Benchmark ndstep, ndstep_seq, ndsqistep, ndsqistep_seq, scipy_seq')
-    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] [-t STAGITER] [-I FORCE_STEP_I] [-p|-P] [-o] {nd[sqi]step,nd[sqi]step_seq,scipy_seq}')
+    print('Usage: test.py [-b BURNIN] [-f {f4,bFID}] [-d DIM] [-e {rr,random,mindiff,maxdiff,diffpd,rdiffpd}] [-g EPSILON] [-i MAXITER] [-s SEED] [-r REPEATS] [-t STAGITER] [-I FORCE_STEP_I] [-B FORCE_BRENT_I] [-p|-P] [-o] {nd[sqi]step,nd[sqi]step_seq,scipy_seq}')
     sys.exit(err)
 
 
@@ -321,6 +322,7 @@ if __name__ == "__main__":
         'burnin': 4,  # *D iters are spend systematically sampling first
         'stagiter': None,  # *D iters non-improving will cause a restart
         'force_STEP': 0,  # SQISTEP specific
+        'force_Brent': 10,  # SQISTEP specific
         'split_at_pred': True,  # SQISTEP specific
         'posik_SQI': False,  # SQISTEP specific
         'disp': False,
@@ -330,7 +332,7 @@ if __name__ == "__main__":
     bbob_experiment = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "b:d:e:f:g:hi:nNopPr:s:I:t:v", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:], "b:B:d:e:f:g:hi:nNopPr:s:I:t:v", ["help"])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -361,6 +363,8 @@ if __name__ == "__main__":
             options['egreedy'] = float(a)
         elif o == "-b":
             options['burnin'] = int(a)
+        elif o == "-B":
+            options['force_Brent'] = int(a)
         elif o == "-d":
             options['dim'] = int(a)
         elif o == "-i":

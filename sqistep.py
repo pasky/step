@@ -61,7 +61,7 @@ class SQISTEP(STEP):
     >>> print(optimize.xmin, optimize.fmin)
 
     """
-    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, force_STEP=5, split_at_pred=True, posik_SQI=False, **options):
+    def __init__(self, fun, epsilon=1e-8, disp=False, tolx=1e-10, maxdiff=1e7, force_STEP=0, force_Brent=10, split_at_pred=True, posik_SQI=False, **options):
         """
         Set up a SQISTEP algorithm instance on a particular function.
         This does not evaluate it in any way yet - to start optimization,
@@ -69,7 +69,10 @@ class SQISTEP(STEP):
 
         If force_STEP = N > 0, every N iterations STEP is forcibly invoked
         instead of (potentially) SQI.  SQI may exhibit slow convergence
-        when the function is quite non-quadratic.
+        when the function is quite non-quadratic.  On the other hand, if
+        force_Brent = N > 0, every N iterations Brent (or SQI) is forcibly
+        invoked instead of STEP when a suitable NIP is available, even if
+        no improvement is predicted.
 
         split_at_pred set to False will keep SQI in use for interval selection,
         but when an interval is selected, it is sampled in its half, not at the
@@ -82,6 +85,7 @@ class SQISTEP(STEP):
         super(SQISTEP, self).__init__(fun, epsilon, disp, tolx, maxdiff, **options)
 
         self.force_STEP = force_STEP
+        self.force_Brent = force_Brent
         self.split_at_pred = split_at_pred
         self.posik_SQI = posik_SQI
 
@@ -124,9 +128,11 @@ class SQISTEP(STEP):
                                         np.roll(self.points, -2) - self.qxmin > self.tolx)
         iqfmin = filter(lambda (i, qfmin): qxmin_suitable[i], enumerate(self.qfmin))
         if len(iqfmin) == 0:
+            # print('stop split')
             return None  # We cannot split further
         i, qfmin = min(iqfmin, key=itemgetter(1))
-        if qfmin > self.fmin - self.epsilon:
+        if qfmin > self.fmin - self.epsilon and (self.force_Brent == 0 or self.itercnt % self.force_Brent > 0):
+            # print('%s > %s' % (qfmin, self.fmin - self.epsilon))
             return None  # Even the best estimate is too high
         return i
 
