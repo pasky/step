@@ -246,7 +246,7 @@ class STEP(object):
         if len(points) == 2:
             assert np.sum(points[1] != points[0]) == 1
         # Interval width should be positive and non-zero
-        assert np.all(x > 0)
+        #assert np.all(x > 0)
 
         y = values[1:] - values[:-1]
         f = self.fmin - values[:-1] - self.epsilon
