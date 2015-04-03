@@ -315,7 +315,7 @@ if __name__ == "__main__":
     options = {
         'f': F4,
         'dim': 20,
-        'maxiter': 32000,
+        'maxiter': 1600,
         'seed': 43,
         'dimselect': None,
         'egreedy': 0,
@@ -398,6 +398,7 @@ if __name__ == "__main__":
             if a is not None:
                 algid += a
 
+    options['maxiter'] *= options['dim']
     method = args[0]
     algid += method
 
