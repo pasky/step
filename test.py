@@ -430,9 +430,9 @@ if __name__ == "__main__":
         elif method == "ndstep_seq":
             globres = run_ndstep('ndstep_seq-log.txt', ndstep_seq_minimize, options)
         elif method == "ndsqistep":
-            globres = run_ndstep('ndstep-log.txt', ndstep_minimize, options, stclass=SQISTEP)
+            globres = run_ndstep('ndsqistep-log.txt', ndstep_minimize, options, stclass=SQISTEP)
         elif method == "ndsqistep_seq":
-            globres = run_ndstep('ndstep_seq-log.txt', ndstep_seq_minimize, options, minf=sqistep_minimize)
+            globres = run_ndstep('ndsqistep_seq-log.txt', ndstep_seq_minimize, options, minf=sqistep_minimize)
         elif method == "scipy_seq":
             globres = run_ndstep('scipy_seq-log.txt', scipy_seq_minimize, options)
         else:
