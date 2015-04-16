@@ -113,6 +113,7 @@ def easiest_difficulty(o):
 
 
 def easiest_sqi(o):
+    if o is None: return np.Inf
     i = o.easiest_sqi_interval()
     if i is not None:
         return o.qfmin[i]
