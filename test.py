@@ -316,7 +316,7 @@ if __name__ == "__main__":
     options = {
         'f': F4,
         'dim': 20,
-        'maxiter': 1600,
+        'maxiter': 1e4,
         'seed': 43,
         'dimselect': None,
         'egreedy': 0,
