@@ -213,6 +213,33 @@ class DimSelectHistoryRA:
         self.lastfmin = 1e10
 
 
+class DimSelectImprovementFreqRA:
+    def __init__(self, dim):
+        self.dim = dim
+        self.reset()
+
+    def reset(self):
+        self.runmean = [1 for i in range(self.dim)]
+        self.lastfmin = None
+
+    def update(self, lastdim, min):
+        # Record results of previous selection
+        (xmin, fmin) = min
+        if lastdim < 0:
+            self.lastfmin = fmin
+            return
+
+        imp = 1 if fmin < self.lastfmin - 1e-8 else 0
+        beta = 1e-1  # 1/beta should be < stagiter
+        self.runmean[lastdim] = beta * imp + (1 - beta) * self.runmean[lastdim]
+        if fmin < self.lastfmin:
+            self.lastfmin = fmin
+
+    def __call__(self, fun, optimize, niter, min):
+        # New selection
+        return np.argmax(self.runmean)
+
+
 class DimSelectWrapper:
     """
     A generic wrapper around specific dimselect methods that
@@ -348,6 +375,7 @@ if __name__ == "__main__":
                              mindiff=dimselect_mindiff, maxdiff=dimselect_maxdiff,
                              diffpd=dimselect_diffpd, rdiffpd=dimselect_rdiffpd,
                              history='history', historyRA='historyRA',
+                             improvementFreqRA='improvementFreqRA',
                              minsqi=dimselect_minsqi)
             options['dimselect'] = dimstrats[a]
         elif o == "-f":
@@ -407,6 +435,8 @@ if __name__ == "__main__":
         options['dimselect'] = DimSelectHistory(options['dim'])
     elif options['dimselect'] == 'historyRA':
         options['dimselect'] = DimSelectHistoryRA(options['dim'])
+    elif options['dimselect'] == 'improvementFreqRA':
+        options['dimselect'] = DimSelectImprovementFreqRA(options['dim'])
 
     if options['dimselect'] is not None:
         options['dimselect'] = DimSelectWrapper(options, options['dimselect'])
