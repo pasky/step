@@ -124,8 +124,12 @@ class SQISTEP(STEP):
         """
         # Do not take guesses that are too near one of the interval
         # pair boundaries
-        qxmin_suitable = np.logical_and(self.qxmin - self.points > self.tolx,
-                                        np.roll(self.points, -2) - self.qxmin > self.tolx)
+        if self.axis is None:
+            qxmin_suitable = np.logical_and(self.qxmin - self.points > self.tolx,
+                                            np.roll(self.points, -2) - self.qxmin > self.tolx)
+        else:
+            qxmin_suitable = np.logical_and(self.qxmin[:,self.axis] - self.points[:,self.axis] > self.tolx,
+                                            np.roll(self.points[:,self.axis], -2) - self.qxmin[:,self.axis] > self.tolx)
         iqfmin = filter(lambda (i, qfmin): qxmin_suitable[i], enumerate(self.qfmin))
         if len(iqfmin) == 0:
             # print('stop split')
